@@ -1,0 +1,17 @@
+{
+  "name": "Roulette di Casa",
+  "short_name": "Roulette",
+  "description": "Le missioni di casa, il tesoretto e i turni. Per Sonia, Tony, Samuel e Thomas.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0D241E",
+  "theme_color": "#0D241E",
+  "lang": "it",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

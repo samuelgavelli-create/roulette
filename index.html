@@ -1,0 +1,2231 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0D241E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Roulette">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Roulette di Casa</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230D241E'/%3E%3Ccircle cx='32' cy='34' r='17' fill='none' stroke='%23D9A441' stroke-width='4'/%3E%3Ccircle cx='32' cy='34' r='4' fill='%23D9A441'/%3E%3Cpath d='M32 6l5 8H27z' fill='%23D9A441'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230D241E'/%3E%3Ccircle cx='32' cy='34' r='17' fill='none' stroke='%23D9A441' stroke-width='4'/%3E%3Ccircle cx='32' cy='34' r='4' fill='%23D9A441'/%3E%3Cpath d='M32 6l5 8H27z' fill='%23D9A441'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --felt:#123028; --felt-2:#081A15; --line:#1E4438; --line-2:#2C5C4C;
+  --paper:#F3EDDF; --paper-2:#E4DBC5; --ink:#1A1815; --ink-2:#6A6357;
+  --gold:#D9A441; --gold-d:#9E7420; --rosso:#C2412D; --verde:#7ED0B4;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;overscroll-behavior-y:none;}
+body{background:var(--felt-2);color:var(--paper);font-family:'Archivo',system-ui,sans-serif;
+  line-height:1.5;min-height:100vh;overflow-x:hidden;}
+#bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(120% 80% at 50% -10%,#1B4438 0%,#123028 42%,#081A15 100%);}
+#bg::after{content:'';position:absolute;inset:-40%;
+  background:conic-gradient(from 0deg,transparent 0%,rgba(217,164,65,.055) 12%,transparent 26%,transparent 60%,rgba(217,164,65,.04) 72%,transparent 88%);
+  animation:spin 44s linear infinite;}
+#bg::before{content:'';position:absolute;inset:0;opacity:.5;
+  background-image:radial-gradient(circle,rgba(255,255,255,.045) 1px,transparent 1.3px);
+  background-size:22px 22px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.mono{font-family:'DM Mono',monospace;}
+.wrap{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:0 14px 80px;}
+button{font-family:inherit;}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+
+/* ===== GATE ===== */
+#gate{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;justify-content:center;
+  padding:24px 18px;transition:opacity .45s,transform .45s;}
+#gate.via{opacity:0;pointer-events:none;}
+#gate.zoom{transition:opacity .5s ease .16s,transform .62s cubic-bezier(.5,0,.32,1);}
+.prof.scelto{z-index:3;animation:none!important;
+  transition:transform .62s cubic-bezier(.5,0,.32,1),box-shadow .4s;
+  box-shadow:0 0 0 2px var(--gold),0 18px 50px rgba(0,0,0,.55);}
+.prof.scelto .gettone{transition:transform .5s cubic-bezier(.3,1.4,.5,1);transform:scale(1.14);}
+.prof.spento{transition:opacity .34s,transform .34s;opacity:0;transform:scale(.86);animation:none!important;}
+.gate-in.sfuma{transition:opacity .34s;}
+.gate-in.sfuma .kick,.gate-in.sfuma h1,.gate-in.sfuma .sub{opacity:0;transition:opacity .3s;}
+.gate-in{position:relative;z-index:1;max-width:440px;margin:0 auto;width:100%;}
+.kick{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--gold);margin:0 0 10px;text-align:center;animation:up .6s both;}
+.gate-in h1{font-weight:900;font-size:clamp(32px,10.5vw,46px);line-height:.9;margin:0 0 8px;
+  text-transform:uppercase;letter-spacing:-.025em;text-align:center;animation:up .6s .06s both;}
+.gate-in h1 em{font-style:normal;color:var(--gold);text-shadow:0 0 24px rgba(217,164,65,.4);}
+.gate-in .sub{text-align:center;font-size:13px;color:#9FB5AB;margin:0 0 26px;animation:up .6s .12s both;}
+@keyframes up{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+.profili{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.prof{position:relative;border:1px solid var(--line-2);border-radius:16px;padding:16px 10px 13px;
+  background:rgba(255,255,255,.035);cursor:pointer;text-align:center;overflow:hidden;
+  transition:transform .18s cubic-bezier(.2,.9,.3,1.4);animation:pop .5s both;}
+@keyframes pop{from{opacity:0;transform:translateY(22px) rotate(-2deg) scale(.9);}to{opacity:1;transform:none;}}
+.prof:active{transform:scale(.94);}
+.prof .glow{position:absolute;inset:-30% -30% auto;height:70%;filter:blur(28px);opacity:.55;}
+.gettone{position:relative;width:58px;height:58px;margin:0 auto 9px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-weight:900;font-size:21px;color:#fff;
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.28),0 6px 18px rgba(0,0,0,.4);}
+.gettone::after{content:'';position:absolute;inset:-6px;border-radius:50%;
+  border:1.5px dashed rgba(255,255,255,.22);animation:spin 18s linear infinite;}
+.prof .pn{font-weight:600;font-size:15px;position:relative;}
+.prof .pr{font-family:'DM Mono',monospace;font-size:9.5px;color:#8FA79C;letter-spacing:.08em;
+  text-transform:uppercase;margin-top:2px;position:relative;}
+
+/* ===== BARRA ===== */
+.topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:10px;
+  padding:11px 14px;margin:0 -14px;background:rgba(8,26,21,.88);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);}
+.tb-av{width:33px;height:33px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;position:relative;transition:transform .18s cubic-bezier(.2,.9,.3,1.4);
+  font-weight:900;font-size:12px;color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,.3);}
+.tb-txt{line-height:1.15;min-width:0;}
+.tb-txt b{font-size:14px;font-weight:600;display:block;}
+.tb-txt span{font-family:'DM Mono',monospace;font-size:10px;color:#8FA79C;letter-spacing:.05em;}
+.tb-btn{margin-left:auto;width:40px;height:40px;border-radius:11px;border:1px solid var(--line-2);
+  background:rgba(255,255,255,.04);color:var(--paper);cursor:pointer;display:flex;
+  align-items:center;justify-content:center;flex-direction:column;gap:4px;position:relative;}
+.tb-btn i{display:block;width:16px;height:1.6px;background:var(--paper);border-radius:2px;transition:.25s;}
+.tb-btn.open i:nth-child(1){transform:translateY(5.6px) rotate(45deg);}
+.tb-btn.open i:nth-child(2){opacity:0;}
+.tb-btn.open i:nth-child(3){transform:translateY(-5.6px) rotate(-45deg);}
+.tb-btn .dot{position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;
+  background:var(--rosso);border:2px solid #081A15;}
+#menu{position:sticky;top:57px;z-index:29;margin:0 -14px;overflow:hidden;max-height:0;
+  transition:max-height .38s cubic-bezier(.2,.8,.2,1);background:rgba(10,30,24,.97);
+  backdrop-filter:blur(14px);border-bottom:0 solid var(--line);}
+#menu.open{max-height:520px;border-bottom-width:1px;}
+.mi{display:flex;align-items:center;gap:12px;padding:13px 18px;cursor:pointer;
+  border-bottom:1px solid rgba(255,255,255,.05);font-size:14.5px;
+  opacity:0;transform:translateX(-14px);transition:.3s;}
+#menu.open .mi{opacity:1;transform:none;}
+#menu.open .mi:nth-child(1){transition-delay:.04s}#menu.open .mi:nth-child(2){transition-delay:.08s}
+#menu.open .mi:nth-child(3){transition-delay:.12s}#menu.open .mi:nth-child(4){transition-delay:.16s}
+#menu.open .mi:nth-child(5){transition-delay:.20s}#menu.open .mi:nth-child(6){transition-delay:.24s}
+#menu.open .mi:nth-child(7){transition-delay:.28s}#menu.open .mi:nth-child(8){transition-delay:.32s}
+.mi.att{background:rgba(217,164,65,.1);color:var(--gold);}
+.mi svg{width:19px;height:19px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round;opacity:.85;}
+.mi .bd{margin-left:auto;font-family:'DM Mono',monospace;font-size:10.5px;
+  background:var(--gold);color:#2A1D05;padding:1px 7px;border-radius:20px;}
+.mi .bd.rosso{background:var(--rosso);color:#FFE9E4;}
+
+/* ===== VISTE ===== */
+.view{animation:vin .4s cubic-bezier(.2,.8,.3,1) both;padding-top:16px;}
+@keyframes vin{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+h2{font-weight:900;font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);
+  margin:0 0 11px;display:flex;align-items:center;gap:9px;}
+h2::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--line-2),transparent);}
+.pan{border:1px solid var(--line);border-radius:15px;padding:14px;background:rgba(255,255,255,.032);}
+.sez{margin-bottom:22px;}
+.vuoto{text-align:center;font-size:13px;color:#7B9188;padding:20px 0;}
+.p{margin:0 0 11px;font-size:13px;color:#C3D3CB;}
+.debug{border:1px dashed var(--gold-d);border-radius:12px;padding:10px 12px;margin-bottom:16px;
+  background:rgba(217,164,65,.07);font-size:12px;color:#E7D3A6;display:flex;gap:10px;align-items:center;}
+.debug b{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--gold);border:1px solid var(--gold-d);border-radius:5px;padding:3px 6px;flex:none;}
+
+/* ===== ROULETTE ===== */
+.ruota{width:126px;height:126px;margin:2px auto 16px;position:relative;}
+.disco{position:absolute;inset:0;border-radius:50%;
+  background:repeating-conic-gradient(#14352C 0 30deg,#0E241D 30deg 60deg);
+  box-shadow:0 10px 28px rgba(0,0,0,.5),inset 0 0 0 5px #D9A441,inset 0 0 30px rgba(217,164,65,.25);
+  animation:spin 26s linear infinite;}
+.disco::before{content:'';position:absolute;inset:16px;border-radius:50%;
+  border:1.5px dashed rgba(217,164,65,.45);}
+.disco::after{content:'';position:absolute;inset:44%;border-radius:50%;background:var(--gold);
+  box-shadow:0 0 14px rgba(217,164,65,.7);}
+.ruota .pin{position:absolute;left:50%;top:-9px;transform:translateX(-50%);
+  border-left:8px solid transparent;border-right:8px solid transparent;border-top:14px solid var(--gold);
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.6));z-index:2;}
+.ruota.gira .disco{animation:spin .5s linear infinite;}
+.slot{border:2px dashed var(--line-2);border-radius:14px;padding:12px 13px;margin-bottom:10px;
+  background:rgba(255,255,255,.02);display:flex;gap:12px;align-items:center;min-height:70px;
+  transition:border-color .3s,background .3s;}
+.slot .sk{width:28px;height:28px;border-radius:9px;border:2px dashed #35604F;flex:none;}
+.slot .s1{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:#7B9188;margin-bottom:3px;}
+.slot .s2{font-size:14.5px;font-weight:500;color:#55695F;line-height:1.25;}
+.slot.gira{border-style:solid;border-color:rgba(217,164,65,.5);background:rgba(217,164,65,.05);}
+.slot.gira .s2{color:#B9C9C0;}
+.slot.fermo{border-color:var(--gold);background:rgba(217,164,65,.1);}
+.slot.fermo .s2{color:var(--paper);}
+.slot.fermo .sk{border-style:solid;border-color:var(--gold);background:rgba(217,164,65,.25);}
+
+/* ===== CARD ===== */
+.mcard{position:relative;background:var(--paper);color:var(--ink);border-radius:15px;margin-bottom:12px;
+  overflow:hidden;box-shadow:0 8px 22px rgba(0,0,0,.32);
+  animation:flip .6s cubic-bezier(.25,.9,.3,1.1) both;transform-origin:50% 100%;}
+@keyframes flip{from{opacity:0;transform:perspective(900px) rotateX(-70deg) translateY(24px);}
+  to{opacity:1;transform:perspective(900px) rotateX(0) translateY(0);}}
+.mtop{display:flex;align-items:center;gap:7px;padding:8px 13px;background:var(--paper-2);
+  border-bottom:1px solid #D4C9AF;flex-wrap:wrap;}
+.liv{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+  padding:3px 7px;border-radius:4px;font-weight:500;}
+.liv-facile{background:#D6E7D2;color:#2F5029;}
+.liv-media{background:#F3E1BF;color:#77571A;}
+.liv-difficile{background:#F0D2CB;color:#8A2E20;}
+.liv-mensile{background:#2A1D05;color:var(--gold);}
+.liv-spazzatura{background:#1A1815;color:var(--verde);}
+.liv-flash{background:var(--rosso);color:#FFE9E4;}
+.tagx{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--rosso);border:1px solid #E0B7AF;padding:2px 6px;border-radius:4px;}
+.quota{margin-left:auto;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;}
+.mbody{display:flex;gap:12px;padding:14px 13px;align-items:flex-start;}
+.chk{width:30px;height:30px;flex:none;border-radius:9px;border:2px solid #C0B69E;background:#fff;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:.2s cubic-bezier(.2,.9,.3,1.5);}
+.chk svg{width:17px;height:17px;stroke:var(--paper);fill:none;stroke-width:3.4;stroke-linecap:round;
+  stroke-linejoin:round;stroke-dasharray:26;stroke-dashoffset:26;transition:stroke-dashoffset .3s .05s;}
+.chk.on{background:var(--ink);border-color:var(--ink);transform:scale(1.06);}
+.chk.on svg{stroke-dashoffset:0;}
+.mtit{font-size:15px;font-weight:500;line-height:1.32;}
+.mtit.done{text-decoration:line-through;color:#9A9285;}
+.mnote{font-size:12px;color:var(--ink-2);margin-top:3px;}
+.mfoot{display:flex;align-items:center;gap:8px;padding:8px 13px;border-top:1px dashed #D4C9AF;
+  font-family:'DM Mono',monospace;font-size:11px;color:var(--ink-2);}
+.mfoot .cd{margin-left:auto;font-weight:500;color:var(--ink);}
+.mfoot .cd.urg{color:var(--rosso);animation:puls 1.1s ease-in-out infinite;}
+@keyframes puls{0%,100%{opacity:1}50%{opacity:.42}}
+.mcard.flash{box-shadow:0 0 0 2px rgba(194,65,45,.7),0 8px 22px rgba(0,0,0,.32);}
+.mcard.rubabile{box-shadow:0 0 0 2px var(--gold),0 10px 26px rgba(217,164,65,.28);}
+.btn-ruba{margin-left:auto;padding:6px 12px;border-radius:8px;border:none;background:var(--ink);
+  color:var(--gold);font-weight:600;font-size:12px;cursor:pointer;flex:none;}
+.btn-ruba:active{transform:scale(.95);}
+.btn-x{margin-left:auto;padding:5px 10px;border-radius:8px;border:1px solid #D4C9AF;
+  background:transparent;color:var(--ink-2);font-size:11.5px;cursor:pointer;flex:none;}
+.lock{position:absolute;inset:0;background:rgba(14,32,26,.5);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  color:var(--paper);cursor:pointer;}
+.lock .chain{position:absolute;left:-8%;width:116%;height:26px;opacity:.72;}
+.lock .chain.a{top:26%;transform:rotate(-7deg);}
+.lock .chain.b{top:60%;transform:rotate(5deg);}
+.lock .pad{width:42px;height:42px;position:relative;z-index:2;filter:drop-shadow(0 3px 6px rgba(0,0,0,.5));}
+.lock .lt{position:relative;z-index:2;font-family:'DM Mono',monospace;font-size:10px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--gold);text-align:center;padding:0 18px;}
+.mcard.shake{animation:shake .5s;}
+@keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}
+  30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
+
+/* ===== RIGHE / CONTROLLI ===== */
+.riga{display:flex;align-items:center;gap:10px;padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,.06);font-size:13.5px;}
+.riga:last-child{border-bottom:none;}
+.pall{width:9px;height:9px;border-radius:50%;flex:none;}
+.riga .rt{flex:1;min-width:0;}
+.riga .rt b{font-weight:500;display:block;font-size:13.5px;}
+.riga .rt span{font-family:'DM Mono',monospace;font-size:10px;color:#8FA79C;}
+.spunta{color:var(--verde);font-size:15px;}
+.mini{width:26px;height:26px;flex:none;border-radius:8px;border:1.5px solid var(--line-2);
+  background:transparent;color:#8FA79C;cursor:pointer;font-size:14px;line-height:1;
+  display:flex;align-items:center;justify-content:center;}
+.mini.on{background:var(--verde);border-color:var(--verde);color:#0E2019;}
+.btn{width:100%;padding:17px;border:none;border-radius:13px;cursor:pointer;background:var(--gold);
+  color:#2A1D05;font-weight:900;font-size:16px;text-transform:uppercase;letter-spacing:.05em;
+  box-shadow:0 4px 0 var(--gold-d);transition:transform .08s,box-shadow .08s;}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--gold-d);}
+.btn:disabled{opacity:.7;}
+.btn-r{background:var(--rosso);color:#FFF1EE;box-shadow:0 4px 0 #8A2E20;}
+.btn-o{width:100%;padding:14px;border-radius:11px;cursor:pointer;background:transparent;
+  border:1.5px solid var(--rosso);color:#F0A99C;font-weight:600;font-size:14px;}
+.btn-g{width:100%;padding:12px;border-radius:10px;cursor:pointer;background:transparent;
+  border:1px solid var(--line-2);color:#A9BCB2;font-size:13px;margin-top:8px;}
+.btn-s{padding:9px 13px;border-radius:9px;cursor:pointer;background:var(--gold);border:none;
+  color:#2A1D05;font-weight:600;font-size:12.5px;flex:none;}
+.btn-g:active,.btn-o:active,.btn-s:active{transform:scale(.98);}
+.inp{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line-2);
+  background:rgba(255,255,255,.05);color:var(--paper);font-family:'Archivo',sans-serif;
+  font-size:14.5px;margin-bottom:8px;}
+.inp::placeholder{color:#6E8579;}
+.row{display:flex;gap:8px;align-items:center;}
+.chip{display:flex;gap:7px;margin-bottom:10px;}
+.chip button{flex:1;padding:11px 4px;border-radius:11px;border:1px solid var(--line-2);
+  background:rgba(255,255,255,.03);color:#A9BCB2;font-size:13px;cursor:pointer;}
+.chip button.on{color:#0E2019;font-weight:600;border-color:transparent;}
+
+/* ===== CALENDARIO ===== */
+.cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;}
+.cal-h b{font-weight:900;font-size:18px;text-transform:capitalize;}
+.nav{width:36px;height:36px;border-radius:10px;border:1px solid var(--line-2);background:transparent;
+  color:var(--paper);cursor:pointer;font-size:17px;line-height:1;}
+.dows{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:5px;}
+.dows span{text-align:center;font-family:'DM Mono',monospace;font-size:9px;color:#7B9188;
+  text-transform:uppercase;letter-spacing:.06em;}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.day{aspect-ratio:1;border-radius:9px;border:1px solid rgba(255,255,255,.07);
+  background:rgba(255,255,255,.03);display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;cursor:pointer;font-family:'DM Mono',monospace;font-size:12px;
+  color:var(--paper);animation:dpop .3s both;}
+@keyframes dpop{from{opacity:0;transform:scale(.7);}to{opacity:1;transform:none;}}
+.day.off{opacity:.2;pointer-events:none;}
+.day.oggi{border-color:var(--gold);color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset;}
+.day.rit{background:rgba(126,208,180,.12);}
+.day:active{background:rgba(255,255,255,.1);}
+.dots{display:flex;gap:2.5px;height:5px;align-items:center;}
+.dots i{width:4.5px;height:4.5px;border-radius:50%;display:block;}
+.lg{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:12px;
+  font-family:'DM Mono',monospace;font-size:10px;color:#8FA79C;}
+.lg span{display:flex;align-items:center;gap:5px;}
+.lg i{width:8px;height:8px;border-radius:50%;display:block;}
+
+/* ===== SHEET ===== */
+#sheet{position:fixed;inset:0;z-index:50;display:none;}
+#sheet.on{display:block;}
+#sheet .bk{position:absolute;inset:0;background:rgba(4,14,11,.62);backdrop-filter:blur(3px);}
+#sheet .sh{position:absolute;left:0;right:0;bottom:0;max-height:84vh;overflow:auto;
+  background:#0E2A22;border-top:1px solid var(--line-2);border-radius:20px 20px 0 0;
+  padding:14px 16px calc(28px + env(safe-area-inset-bottom));
+  animation:su .32s cubic-bezier(.2,.8,.3,1);max-width:560px;margin:0 auto;}
+@keyframes su{from{transform:translateY(70px);opacity:0}to{transform:none;opacity:1}}
+.sh .grab{width:44px;height:4px;border-radius:3px;background:#35604F;margin:0 auto 14px;}
+.sh h3{margin:0 0 2px;font-size:19px;font-weight:900;text-transform:capitalize;}
+.sh .dsub{font-family:'DM Mono',monospace;font-size:10.5px;color:#8FA79C;letter-spacing:.08em;
+  text-transform:uppercase;margin-bottom:16px;}
+
+/* ===== SPAZZATURA ===== */
+.next{text-align:center;padding:6px 0 16px;border-bottom:1px dashed var(--line);margin-bottom:14px;}
+.next .nt{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:#8FA79C;margin-bottom:6px;}
+.next .nn{font-weight:900;font-size:24px;text-transform:uppercase;letter-spacing:-.01em;}
+.next .nc{font-family:'DM Mono',monospace;font-size:13px;color:var(--gold);margin-top:4px;}
+.tipo{margin-bottom:16px;}
+.tipo-h{display:flex;align-items:center;gap:9px;margin-bottom:7px;}
+.tipo-h .sq{width:14px;height:14px;border-radius:4px;flex:none;}
+.tipo-h b{font-weight:600;font-size:13.5px;}
+.tipo-h .fq{margin-left:auto;font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:#8FA79C;border:1px solid var(--line-2);border-radius:4px;padding:2px 6px;}
+.gg{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+.g{aspect-ratio:1;border-radius:8px;border:1px solid rgba(255,255,255,.09);
+  background:rgba(255,255,255,.03);color:#8FA79C;font-family:'DM Mono',monospace;font-size:10.5px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.18s;}
+.g.on{color:#0E2019;font-weight:500;transform:scale(1.06);}
+.par{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:11.5px;color:#8FA79C;}
+.par button{margin-left:auto;padding:6px 10px;border-radius:8px;border:1px solid var(--line-2);
+  background:transparent;color:#A9BCB2;font-size:11.5px;cursor:pointer;flex:none;}
+
+/* ===== LISTA DELLA SPESA ===== */
+.ob{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+.ob b{font-weight:600;font-size:15px;line-height:1.25;}
+.ob .oc{margin-left:auto;font-family:'DM Mono',monospace;font-size:13.5px;color:var(--gold);flex:none;}
+.obar{height:11px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden;}
+.obar .fil{display:block;height:100%;}
+.riga .mini+.mini{margin-left:2px;}
+.hint{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.06em;color:#7B9188;
+  margin:0 0 9px;text-transform:uppercase;}
+
+/* ===== TESORETTO ===== */
+.forziere{text-align:center;padding:10px 0 18px;}
+.cifra{font-family:'DM Mono',monospace;font-weight:500;font-size:clamp(42px,14vw,58px);line-height:1;
+  letter-spacing:-.03em;color:var(--gold);text-shadow:0 0 34px rgba(217,164,65,.38);}
+.cifra-l{font-size:11px;color:#8FA79C;margin-top:8px;font-family:'DM Mono',monospace;
+  letter-spacing:.14em;text-transform:uppercase;}
+.monete{display:flex;justify-content:center;gap:5px;margin-bottom:12px;height:32px;align-items:flex-end;}
+.moneta{width:24px;height:24px;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%,#F2CE7F,#C08D26);
+  box-shadow:0 2px 5px rgba(0,0,0,.45),inset 0 0 0 2px rgba(255,255,255,.28);
+  animation:cade .55s cubic-bezier(.3,1.5,.5,1) both;}
+@keyframes cade{from{opacity:0;transform:translateY(-26px) rotate(-45deg);}to{opacity:1;transform:none;}}
+.deb{display:flex;align-items:center;gap:9px;padding:9px 0;}
+.deb .dn{width:58px;font-size:13px;flex:none;}
+.trk{flex:1;height:9px;border-radius:5px;background:rgba(255,255,255,.07);overflow:hidden;}
+.fil{height:100%;border-radius:5px;width:0;transition:width .9s cubic-bezier(.2,.8,.3,1);}
+.deb .di{font-family:'DM Mono',monospace;font-size:12.5px;width:48px;text-align:right;flex:none;}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px;}
+.st{border:1px solid var(--line);border-radius:12px;padding:12px;background:rgba(255,255,255,.03);}
+.st .sv{font-family:'DM Mono',monospace;font-size:22px;font-weight:500;line-height:1;}
+.st .sl{font-size:10.5px;color:#8FA79C;margin-top:5px;}
+.reg{display:flex;gap:12px;padding:10px 0;font-size:13px;color:#C3D3CB;
+  border-bottom:1px solid rgba(255,255,255,.05);}
+.reg:last-child{border-bottom:none;}
+.reg .n{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--gold);flex:none;padding-top:2px;}
+
+/* ===== SERVIZI ===== */
+.svc{border:1px solid var(--line);border-radius:14px;padding:11px 12px;margin-bottom:9px;
+  background:rgba(255,255,255,.02);}
+.svc-h{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.svc-h b{font-size:13.5px;flex:1;}
+.svc-h .bl{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.09em;
+  text-transform:uppercase;color:#8FA79C;}
+.svc-chi{font-family:'DM Mono',monospace;font-size:11px;font-weight:600;}
+.gio{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:5px;}
+.svc-f{display:flex;align-items:center;gap:8px;margin-top:9px;}
+.svc-f .svc-chi{flex:1;}
+.svc.mio{border-color:rgba(217,164,65,.45);background:rgba(217,164,65,.05);}
+.gio button{border:1px solid var(--line);background:transparent;color:#9FB5AB;border-radius:9px;
+  padding:7px 0 6px;font:inherit;font-size:9.5px;cursor:pointer;line-height:1.35;
+  display:flex;flex-direction:column;align-items:center;gap:3px;transition:.15s;}
+.gio button .dd{font-family:'DM Mono',monospace;font-size:12px;color:#F3EDDF;}
+.gio button.on{background:rgba(126,208,180,.16);border-color:#7ED0B4;color:#7ED0B4;}
+.gio button.on .dd{color:#7ED0B4;}
+.gio button.altro{opacity:.42;}
+.gio button.oggi{border-color:var(--gold);}
+.gio button.persa{border-color:#8E4436;color:#F0A99C;}
+.gio button.persa .dd{color:#F0A99C;}
+
+/* ===== PROBABILITÀ ===== */
+.prow{border-bottom:1px solid var(--line);padding:11px 0;}
+.prow:last-child{border-bottom:0;}
+.prow-h{display:flex;align-items:center;gap:9px;cursor:pointer;}
+.prow-h .pt{flex:1;min-width:0;}
+.prow-h .pt b{display:block;font-size:13px;font-weight:600;}
+.prow-h .pt span{font-size:10.5px;color:#7B9188;}
+.prow-h .stato{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.08em;
+  text-transform:uppercase;color:#7B9188;border:1px solid var(--line);border-radius:20px;
+  padding:3px 8px;white-space:nowrap;}
+.prow-h .stato.att{color:var(--gold);border-color:rgba(217,164,65,.5);}
+.barra{display:flex;height:9px;border-radius:20px;overflow:hidden;margin-top:9px;
+  background:rgba(255,255,255,.05);}
+.barra i{display:block;height:100%;transition:width .3s;}
+.pctrl{display:grid;gap:7px;margin-top:11px;}
+.pline{display:flex;align-items:center;gap:9px;}
+.pline .pall{flex:none;}
+.pline .nm{flex:1;font-size:12.5px;}
+.pline .vv{font-family:'DM Mono',monospace;font-size:12px;width:42px;text-align:right;}
+.pline button{width:28px;height:28px;flex:none;border-radius:8px;border:1px solid var(--line);
+  background:transparent;color:#F3EDDF;font:inherit;font-size:15px;line-height:1;cursor:pointer;}
+.pline button:active{background:rgba(255,255,255,.08);}
+.pgrp{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--gold);margin:16px 0 4px;}
+
+/* ===== SCAMBI ===== */
+.sc{border:1px solid rgba(217,164,65,.34);background:rgba(217,164,65,.06);border-radius:14px;
+  padding:12px 13px;margin-bottom:9px;}
+.sc-t{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:7px;}
+.sc-b{display:flex;align-items:center;gap:9px;font-size:12.5px;margin:5px 0;}
+.sc-b .fr{flex:1;min-width:0;}
+.sc-b .fr b{display:block;font-weight:600;}
+.sc-b .fr span{font-size:10.5px;color:#7B9188;}
+.sc-ar{text-align:center;font-size:15px;color:var(--gold);margin:2px 0;}
+.sc-az{display:flex;gap:8px;margin-top:11px;}
+.sc-az button{flex:1;border-radius:10px;padding:9px 0;font:inherit;font-size:12.5px;
+  font-weight:600;cursor:pointer;border:1px solid var(--line);background:transparent;color:#F3EDDF;}
+.sc-az button.si{background:#1F8B77;border-color:#1F8B77;color:#fff;}
+.btn-sc{border:1px solid var(--line-2);background:transparent;color:#9FB5AB;border-radius:9px;
+  padding:6px 11px;font:inherit;font-size:11px;cursor:pointer;white-space:nowrap;}
+.btn-sc:active{background:rgba(255,255,255,.07);}
+
+/* ===== SYNC ===== */
+.sync{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));
+  z-index:35;background:rgba(14,32,26,.94);border:1px solid var(--line-2);border-radius:20px;
+  padding:7px 14px;font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:.06em;
+  color:#9FB5AB;opacity:0;pointer-events:none;transition:opacity .3s;}
+.sync.on{opacity:1;}
+.sync i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#7ED0B4;
+  margin-right:6px;vertical-align:middle;}
+.sync.ko i{background:#F0A99C;}
+
+/* ===== TOAST ===== */
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,90px);z-index:60;
+  background:var(--paper);color:var(--ink);padding:12px 18px;border-radius:11px;font-size:13.5px;
+  font-weight:500;box-shadow:0 10px 30px rgba(0,0,0,.5);
+  transition:transform .35s cubic-bezier(.2,.9,.3,1.3);max-width:88vw;text-align:center;}
+#toast.on{transform:translate(-50%,0);}
+.cor{position:fixed;width:8px;height:12px;z-index:55;pointer-events:none;border-radius:2px;}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;}
+}
+</style>
+</head>
+<body>
+<div id="bg"></div>
+
+<div id="gate">
+  <div class="gate-in">
+    <p class="kick">Quattro conviventi · una ruota</p>
+    <h1>Roulette<br><em>di casa</em></h1>
+    <p class="sub">Tocca il tuo nome, poi gira la ruota e scopri cosa ti tocca.</p>
+    <div class="profili" id="profili"></div>
+  </div>
+</div>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="topbar">
+    <div class="tb-av" id="tbAv"></div>
+    <div class="tb-txt"><b id="tbNome"></b><span id="tbSett"></span></div>
+    <button class="tb-btn" id="tbBtn" aria-label="Menu"><i></i><i></i><i></i></button>
+  </div>
+  <div id="menu"></div>
+  <div id="vista"></div>
+</div>
+
+<div id="sheet"><div class="bk" id="sheetBk"></div><div class="sh" id="sheetIn"></div></div>
+<div id="toast"></div>
+<div class="sync" id="sync"><i></i><span>in linea</span></div>
+
+<script>
+/* ==================== DATI ==================== */
+const G=[
+ {n:'Sonia', r:'Mamma',  h:'#C2412D', i:'SO'},
+ {n:'Tony',  r:'Papà',   h:'#1F8B77', i:'TO'},
+ {n:'Samuel',r:'Figlio', h:'#C9932F', i:'SA'},
+ {n:'Thomas',r:'Figlio', h:'#6260B8', i:'TH'}
+];
+const COL=n=>(G.find(g=>g.n===n)||{h:'#8FA79C'}).h;
+const QUOTA={facile:2,media:5,difficile:10,mensile:20,spazzatura:10,servizio:1};
+const LAB={facile:'Facile',media:'Media',difficile:'Difficile',mensile:'Mensile',
+  spazzatura:'Spazzatura',flash:'Flash',servizio:'Servizio'};
+const ARMADIO=['Samuel','Thomas'];
+const CATS=[
+ {k:'cibo',nome:'Spesa di tutti i giorni',c:'#8FBF6A',corto:'Spesa',
+  vuoto:'Niente da comprare, per ora.'},
+ {k:'casa',nome:'Cose nuove per la casa',c:'#D9A441',corto:'Per la casa',
+  vuoto:'Nessun oggetto in lista.'}
+];
+const catC=k=>(CATS.find(c=>c.k===k)||CATS[0]).c;
+const FLASH_ORE=48;
+const FLASH_LANCIO=2;   /* penale a chi la lancia */
+const FLASH_MANCATA=3;  /* penale a chi non la fa */
+const SCAMBIO_ORE=24;   /* quanto resta aperta una proposta */
+
+const INIZIO_S1=new Date(2026,7,31,0,0,0,0).getTime();  /* lunedì 31 agosto 2026 */
+const EPOCA=new Date(2026,0,5,0,0,0,0).getTime();       /* lunedì di riferimento rotazioni */
+
+/* ---- gruppi di missioni: servono per impostare le probabilità in blocco ---- */
+const GRUPPI=[
+ {k:'giardino',  nome:'Giardino'},
+ {k:'cucina',    nome:'Cucina'},
+ {k:'bagno',     nome:'Bagni'},
+ {k:'pavimenti', nome:'Pavimenti e scale'},
+ {k:'stanze',    nome:'Sala e saletta'},
+ {k:'bucato',    nome:'Bucato'},
+ {k:'camere',    nome:'Camere'},
+ {k:'vetri',     nome:'Vetri e finestre'},
+ {k:'armadio',   nome:'Armadio'},
+ {k:'riordino',  nome:'Riordino'},
+ {k:'spesa',     nome:'Spesa'},
+ {k:'ripostigli',nome:'Cantina e ripostigli'}
+];
+const GNOME=k=>(GRUPPI.find(g=>g.k===k)||{nome:'Altro'}).nome;
+
+/* ---- servizi di casa: fuori dalla ruota, a turni automatici come i bidoni ---- */
+const SERVIZI=[
+ {k:'tavola',nome:'Sparecchiare e pulire il tavolo',n:'Dopo cena: tavolo sgombro, briciole via',c:'#C2412D'},
+ {k:'piatti',nome:'Piatti e lavastoviglie',n:'Carico, avvio e svuotamento',c:'#6FA8D8'}
+];
+const BLOCCHI=[
+ {k:'a',nome:'Lun–Gio',gg:[0,1,2,3]},
+ {k:'b',nome:'Ven–Dom',gg:[4,5,6]}
+];
+
+const SACCO={
+facile:[
+ {t:'Un ripiano dell\'armadio in ordine',n:'Armadio condiviso',g:'armadio',s:ARMADIO},
+ {t:'Scarpe e giacche in ordine',n:'Ingresso e pianerottolo',g:'riordino'},
+ {t:'Svuotare i cestini del piano di sopra',n:'Tutti e tre',g:'riordino'},
+ {t:'Caricare e avviare la lavatrice',n:'Un carico completo',g:'bucato'},
+ {t:'Stendere il bucato',n:'Un carico steso',g:'bucato'},
+ {t:'Ritirare e piegare il bucato',n:'Asciutto e nell\'armadio',g:'bucato'},
+ {t:'Innaffiare le piante di casa',n:'Dentro, vasi e sottovasi',g:'riordino'},
+ {t:'Innaffiare il giardino davanti',n:'La sera, quando cala il sole',g:'giardino'},
+ {t:'Innaffiare il giardino dietro',n:'Vasi compresi',g:'giardino'},
+ {t:'Vialetto e ingresso spazzati',n:'Foglie e cartacce',g:'giardino'},
+ {t:'Attrezzi e sottovasi in ordine',n:'Tutto al suo posto',g:'giardino'}
+],
+media:[
+ {t:'Pulire la sala',n:'Spolverare, aspirare, riordinare',g:'stanze'},
+ {t:'Pulire la saletta',n:'Anche sotto le scale di legno',g:'stanze'},
+ {t:'Cucina a fondo',n:'Piano cottura, lavello, ante',g:'cucina'},
+ {t:'Scale e pianerottolo',n:'Aspirare e lavare',g:'pavimenti'},
+ {t:'Due cassetti dell\'armadio riordinati',n:'Armadio condiviso',g:'armadio',s:ARMADIO},
+ {t:'Pavimenti del piano di sopra',n:'Corridoio compreso',g:'pavimenti'},
+ {t:'Spesa settimanale',n:'Lista, acquisto, sistemazione',g:'spesa'},
+ {t:'Frigo svuotato e pulito',n:'Ripiani e cassetti',g:'cucina'},
+ {t:'Due lavatrici complete',n:'Lavate, stese, piegate',g:'bucato'},
+ {t:'Ingresso e corridoio lavati',n:'Piastrelle a terra',g:'pavimenti'},
+ {t:'Taglio erba giardino davanti',n:'Bordi rifiniti',g:'giardino'},
+ {t:'Taglio erba giardino dietro',n:'Bordi rifiniti',g:'giardino'},
+ {t:'Diserbare aiuole e bordi',n:'Davanti e dietro',g:'giardino'},
+ {t:'Siepe davanti spuntata',n:'Con raccolta del verde',g:'giardino'},
+ {t:'Cortile spazzato e lavato',n:'Vialetto compreso',g:'giardino'},
+ {t:'Mobili da esterno puliti',n:'Tavolo, sedie, cuscini',g:'giardino'}
+],
+difficile:[
+ {t:'Bagno di sopra a fondo',n:'Sanitari, doccia, specchi, fughe',g:'bagno'},
+ {t:'Tutti i pavimenti della casa',n:'Due piani, scale incluse',g:'pavimenti'},
+ {t:'Cucina profonda',n:'Forno, cappa, dietro i fuochi',g:'cucina'},
+ {t:'Mezza anta dell\'armadio rifatta',n:'Ripiani e cassetti',g:'armadio',s:ARMADIO},
+ {t:'Vetri e finestre di casa',n:'Telai compresi',g:'vetri'},
+ {t:'Sala e saletta pulizia completa',n:'Divani, sotto i mobili, tappeti',g:'stanze'},
+ {t:'Cambio lenzuola di tutte le camere',n:'Sfare, lavare, rifare',g:'camere'},
+ {t:'Sgrassare cucina e lavastoviglie',n:'Filtri e guarnizioni',g:'cucina'},
+ {t:'Erba di tutti e due i giardini',n:'Taglio, bordi, raccolta',g:'giardino'},
+ {t:'Potatura siepi e cespugli',n:'Con smaltimento del verde',g:'giardino'},
+ {t:'Giardino dietro rimesso a nuovo',n:'Erba, foglie, bordi, attrezzi',g:'giardino'},
+ {t:'Gazebo e veranda a fondo',n:'Teli, pavimento, ragnatele',g:'giardino'}
+],
+mensile:[
+ {t:'Cambio stagione degli armadi',n:'Missione del mese',g:'armadio'},
+ {t:'Cantina e ripostiglio riordinati',n:'Missione del mese',g:'ripostigli'},
+ {t:'Termosifoni e battiscopa',n:'Missione del mese',g:'riordino'},
+ {t:'Bagno con fughe e scarichi',n:'Missione del mese',g:'bagno'},
+ {t:'Armadio condiviso rifatto da zero',n:'Missione del mese',g:'armadio',s:ARMADIO},
+ {t:'Cambio stagione del giardino',n:'Mobili, teli, vasi dentro o fuori',g:'giardino'},
+ {t:'Giro in discarica verde',n:'Sfoltita generale e carico portato via',g:'giardino'}
+]};
+const TUTTE=()=>['facile','media','difficile','mensile']
+  .flatMap(l=>SACCO[l].map(m=>({...m,liv:l})));
+const MISS=t=>TUTTE().find(m=>m.t===t)||null;
+const grpDi=m=>(m&&m.g)||'riordino';
+
+const TIPI=[
+ {k:'umido',   nome:'Umido',             c:'#8FBF6A', ogni:1},
+ {k:'plastica',nome:'Plastica e lattine',c:'#E8C24A', ogni:2},
+ {k:'carta',   nome:'Carta e cartone',   c:'#6FA8D8', ogni:2},
+ {k:'indiff',  nome:'Indifferenziata',   c:'#B0A99A', ogni:1}
+];
+const DOW=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+const DOWL=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+const MESI=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto',
+  'settembre','ottobre','novembre','dicembre'];
+
+/* ==================== STATO ==================== */
+const KEY='roulette-casa-v4';
+let S=null, io=null, vista='missioni', menuOpen=false, calMese=null, tick=null,
+    girando=false, flashA=null, catSel='cibo';
+
+const DB={
+  async get(){
+    if(window.storage){ const r=await window.storage.get(KEY,true); if(r&&r.value) return r.value; }
+    const l=localStorage.getItem(KEY); if(l===null) throw 0; return l;
+  },
+  async set(v){
+    try{ localStorage.setItem(KEY,v); }catch(e){}
+    if(window.storage){ try{ await window.storage.set(KEY,v,true); }catch(e){} }
+  }
+};
+function pesiDefault(){
+  /* giardino: 30% a papà, il resto diviso fra gli altri tre */
+  return {'g:giardino':{Sonia:70/3,Tony:30,Samuel:70/3,Thomas:70/3}};
+}
+function vuoto(){
+  const d={settimana:0,inizio:0,avviata:false,estratto:false,rivelato:{},missioni:[],arretrati:[],
+    flash:[],flashRitorno:[],eventi:[],log:[],storico:[],debiti:{},pendenze:[],movimenti:[],cassa:0,
+    spesa:[],obiettivo:null,pesi:pesiDefault(),scambi:[],v:1,
+    spazz:{},spazzChiuse:{},spazzDa:Date.now(),
+    serv:{},servTurni:{},servChiuse:{},servDa:Date.now(),
+    ritiri:{umido:[2,5],plastica:[4],carta:[1],indiff:[6]},
+    parita:{plastica:0,carta:1}};
+  G.forEach(g=>{d.debiti[g.n]=0;d.rivelato[g.n]=false;});
+  return d;
+}
+async function carica(){
+  try{ S=JSON.parse(await DB.get()); }catch(e){ S=vuoto(); }
+  const d=vuoto();
+  Object.keys(d).forEach(k=>{ if(S[k]===undefined||S[k]===null) S[k]=d[k]; });
+  G.forEach(g=>{ if(S.debiti[g.n]==null) S.debiti[g.n]=0; });
+  Object.keys(S.ritiri).forEach(k=>{ if(!TIPI.some(t=>t.k===k)) delete S.ritiri[k]; });
+  TIPI.forEach(t=>{ if(!S.ritiri[t.k]) S.ritiri[t.k]=[];
+    if(t.ogni===2&&S.parita[t.k]==null) S.parita[t.k]=0; });
+  if(!S.spazzDa) S.spazzDa=Date.now();
+  if(!S.servDa) S.servDa=Date.now();
+  if(!S.v) S.v=1;
+  ripuliscePesi();
+  if(!S.settimana){ S.settimana=1; S.inizio=lunedi(Date.now()); }
+  avvioUfficiale(); rollover(); chiudiSpazzatura(); chiudiServizi(); chiudiFlash(); chiudiScambi();
+}
+/* toglie dai pesi le missioni che non esistono più nel sacco */
+function ripuliscePesi(){
+  Object.keys(S.pesi||{}).forEach(k=>{
+    if(k.startsWith('g:')&&!GRUPPI.some(g=>'g:'+g.k===k)) delete S.pesi[k];
+    if(k.startsWith('m:')&&!MISS(k.slice(2))) delete S.pesi[k];
+  });
+}
+async function salva(){ S.v=(S.v||0)+1; await DB.set(JSON.stringify(S)); spingi(); }
+
+/* al 31 agosto la fase di prova finisce e il tabellone riparte pulito */
+function avvioUfficiale(){
+  if(S.avviata||Date.now()<INIZIO_S1) return false;
+  const rit=S.ritiri, par=S.parita, ev=S.eventi, lis=S.spesa, ob=S.obiettivo,
+        pe=S.pesi, st=S.servTurni, vv=S.v;
+  S=vuoto();
+  S.ritiri=rit; S.parita=par; S.eventi=ev; S.spesa=lis||[]; S.obiettivo=ob||null;
+  S.pesi=pe||pesiDefault(); S.servTurni=st||{}; S.v=(vv||1)+1;
+  S.avviata=true; S.settimana=1; S.inizio=INIZIO_S1; S.spazzDa=INIZIO_S1;
+  return true;
+}
+
+/* ==================== TEMPO ==================== */
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>{const x=new Date(d);return x.getFullYear()+'-'+pad(x.getMonth()+1)+'-'+pad(x.getDate());};
+function lunedi(d){const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x.getTime();}
+function fineSett(){ return S.inizio+7*864e5; }
+function scadenzaDi(liv){
+  const b=new Date(S.inizio), off={facile:3,media:5,difficile:6,mensile:6}[liv];
+  b.setDate(b.getDate()+off); b.setHours(21,0,0,0); return b.getTime();
+}
+function conta(ms){
+  if(ms<=0) return 'scaduta';
+  const s=Math.floor(ms/1000),g=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);
+  if(g>0) return g+'g '+h+'h';
+  if(h>0) return h+'h '+m+'m';
+  return m+'m '+(s%60)+'s';
+}
+const dataBreve=k=>{const d=new Date(k+'T12:00');
+  return DOW[d.getDay()].toLowerCase()+' '+d.getDate()+' '+MESI[d.getMonth()].slice(0,3);};
+const eur=v=>'€'+(Math.round(v*100)/100).toString().replace('.',',');
+const bloccato=(liv,w)=>(liv==='media'&&w<=1)||((liv==='difficile'||liv==='mensile')&&w<=2);
+const quotaDi=m=>QUOTA[m.liv]||0;
+const rubabile=m=>!m.fatta&&!bloccato(m.liv,S.settimana)&&Date.now()>m.scad-864e5&&Date.now()<m.scad;
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const mix=a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
+function log(tipo,chi,testo,val,g,rif){
+  S.log.unshift({id:'l'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+    ts:Date.now(),g:g||iso(Date.now()),tipo,chi,testo,val:val||0,rif:rif||null});
+  S.log=S.log.slice(0,300);
+}
+
+/* ==================== SPAZZATURA AUTOMATICA ==================== */
+const settIdx=ms=>Math.round((lunedi(ms)-EPOCA)/(7*864e5));
+function attivo(tp,ms){
+  if((tp.ogni||1)===1) return true;
+  return (((settIdx(ms)%2)+2)%2)===(S.parita[tp.k]||0);
+}
+function slotsSettimana(mon){
+  const out=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(mon); d.setDate(d.getDate()+i);
+    TIPI.forEach(tp=>{ if((S.ritiri[tp.k]||[]).includes(d.getDay())&&attivo(tp,mon))
+      out.push({tp,d:new Date(d)}); });
+  }
+  return out;
+}
+function turniSett(ms){
+  const mon=lunedi(ms), w=settIdx(ms);
+  return slotsSettimana(mon).map((s,i)=>{
+    const k=iso(s.d)+'|'+s.tp.k, st=S.spazz[k]||{};
+    const t=new Date(s.d); t.setHours(7,0,0,0);
+    return {k,tp:s.tp,giorno:iso(s.d),ts:t.getTime(),
+      chi:st.chi||G[(((w+i)%G.length)+G.length)%G.length].n,fatta:!!st.fatta,da:st.da||null};
+  });
+}
+function turniGiorno(k){ return turniSett(new Date(k+'T12:00').getTime()).filter(t=>t.giorno===k); }
+function turnoK(k){ return turniGiorno(k.split('|')[0]).find(t=>t.k===k); }
+function prossimoTurno(filtro){
+  for(let w=0;w<8;w++){
+    const t=turniSett(Date.now()+w*7*864e5)
+      .find(x=>x.ts>Date.now()-3600e3&&!x.fatta&&(!filtro||x.tp.k===filtro));
+    if(t) return t;
+  }
+  return null;
+}
+function chiudiSpazzatura(){
+  let n=0;
+  for(let w=-4;w<=0;w++){
+    turniSett(Date.now()+w*7*864e5).forEach(t=>{
+      if(t.ts<Date.now()&&t.ts>=S.spazzDa&&!S.spazzChiuse[t.k]){
+        S.spazzChiuse[t.k]=true;
+        if(!t.fatta){
+          S.debiti[t.chi]=(S.debiti[t.chi]||0)+QUOTA.spazzatura;
+          log('saltata',t.chi,'Bidone '+t.tp.nome.toLowerCase()+' dimenticato',QUOTA.spazzatura,t.giorno,t.k);
+          n++;
+        }
+      }
+    });
+  }
+  return n;
+}
+
+/* ==================== SERVIZI DI CASA (turni automatici) ==================== */
+/* Ogni settimana i due servizi si spezzano in due blocchi: lun-gio e ven-dom.
+   Quattro blocchi, quattro persone, una a testa. La rotazione gira da sola. */
+function bloccoKey(mon,sv,bl){ return iso(new Date(mon+bl.gg[0]*864e5))+'|'+sv.k+'|'+bl.k; }
+function blocchiSett(ms){
+  const mon=lunedi(ms), w=settIdx(ms), out=[];
+  SERVIZI.forEach((sv,si)=>BLOCCHI.forEach((bl,bi)=>{
+    const slot=si*BLOCCHI.length+bi;
+    const base=G[(((w+slot)%G.length)+G.length)%G.length].n;
+    const bk=bloccoKey(mon,sv,bl), ov=(S.servTurni||{})[bk]||{};
+    const gg=bl.gg.map(off=>{ const d=new Date(mon); d.setDate(d.getDate()+off); return iso(d); });
+    out.push({bk,sv,bl,base,chi:ov.chi||base,exchi:ov.exchi||null,mon,gg,
+      dal:gg[0],al:gg[gg.length-1]});
+  }));
+  return out;
+}
+function serviziSett(ms){
+  const out=[];
+  blocchiSett(ms).forEach(b=>b.gg.forEach(gk=>{
+    const k=gk+'|'+b.sv.k, st=(S.serv||{})[k]||{};
+    const t=new Date(gk+'T12:00'); t.setDate(t.getDate()+1); t.setHours(10,0,0,0);
+    out.push({k,bk:b.bk,sv:b.sv,bl:b.bl,giorno:gk,ts:t.getTime(),
+      chi:b.chi,exchi:b.exchi,fatta:!!st.fatta});
+  }));
+  return out.sort((a,b)=>a.giorno<b.giorno?-1:a.giorno>b.giorno?1:0);
+}
+function serviziGiorno(k){ return serviziSett(new Date(k+'T12:00').getTime()).filter(t=>t.giorno===k); }
+function servizioK(k){ return serviziGiorno(k.split('|')[0]).find(t=>t.k===k); }
+function mioBlocco(ms){ return blocchiSett(ms||Date.now()).find(b=>b.chi===io)||null; }
+function chiudiServizi(){
+  let n=0;
+  for(let w=-4;w<=0;w++){
+    serviziSett(Date.now()+w*7*864e5).forEach(t=>{
+      if(t.ts<Date.now()&&t.ts>=S.servDa&&!S.servChiuse[t.k]){
+        S.servChiuse[t.k]=true;
+        if(!t.fatta){
+          S.debiti[t.chi]=(S.debiti[t.chi]||0)+QUOTA.servizio;
+          log('saltata',t.chi,t.sv.nome+' saltato',QUOTA.servizio,t.giorno,t.k);
+          n++;
+        }
+      }
+    });
+  }
+  return n;
+}
+
+/* ==================== PROBABILITÀ ==================== */
+/* Chiave 'm:Titolo' per la singola missione, 'g:gruppo' per tutto il gruppo.
+   La singola vince sul gruppo. Se non c'è niente, è tutto equo. */
+const eleggibili=m=>G.map(g=>g.n).filter(n=>!m.s||m.s.includes(n));
+function pesiSalvati(m){
+  return (S.pesi||{})['m:'+m.t] || (S.pesi||{})['g:'+grpDi(m)] || null;
+}
+function pesiDi(m){
+  const el=eleggibili(m), raw=pesiSalvati(m), out={};
+  if(!raw){ el.forEach(n=>out[n]=100/el.length); return out; }
+  const tot=el.reduce((a,n)=>a+Math.max(0,+raw[n]||0),0);
+  if(tot<=0){ el.forEach(n=>out[n]=100/el.length); return out; }
+  el.forEach(n=>out[n]=Math.max(0,+raw[n]||0)/tot*100);
+  return out;
+}
+const pesoToccato=key=>!!(S.pesi||{})[key];
+/* arrotonda a interi che fanno esattamente 100 */
+function percInt(p){
+  const ks=Object.keys(p), gr=ks.map(k=>({k,v:p[k],f:Math.floor(p[k])}));
+  let r=100-gr.reduce((a,x)=>a+x.f,0);
+  gr.sort((a,b)=>(b.v-b.f)-(a.v-a.f));
+  const out={}; gr.forEach((x,i)=>out[x.k]=x.f+(i<r?1:0));
+  return out;
+}
+/* muove la percentuale di una persona e ridistribuisce il resto in proporzione */
+function spostaPeso(key,m,chi,delta){
+  const el=eleggibili(m);
+  if(!S.pesi[key]){ S.pesi[key]={}; el.forEach(n=>S.pesi[key][n]=100/el.length); }
+  const p={}; el.forEach(n=>p[n]=Math.max(0,+S.pesi[key][n]||0));
+  const tot=el.reduce((a,n)=>a+p[n],0)||1;
+  el.forEach(n=>p[n]=p[n]/tot*100);
+  const nuovo=Math.min(100,Math.max(0,p[chi]+delta));
+  const resto=100-nuovo, altri=el.filter(n=>n!==chi);
+  const sa=altri.reduce((a,n)=>a+p[n],0);
+  altri.forEach(n=>p[n]=sa>0?p[n]/sa*resto:resto/altri.length);
+  p[chi]=nuovo; S.pesi[key]=p;
+}
+function pesa(coppie){
+  const tot=coppie.reduce((a,x)=>a+x[1],0);
+  if(tot<=0) return coppie[Math.floor(Math.random()*coppie.length)][0];
+  let r=Math.random()*tot;
+  for(const c of coppie){ r-=c[1]; if(r<=0) return c[0]; }
+  return coppie[coppie.length-1][0];
+}
+
+/* ==================== SCAMBI ==================== */
+const scambiAperti=()=>(S.scambi||[]).filter(x=>x.stato==='aperto'&&x.scad>Date.now());
+const scambiPerMe=()=>scambiAperti().filter(x=>x.a===io);
+const scambiMiei=()=>scambiAperti().filter(x=>x.da===io);
+function chiudiScambi(){
+  (S.scambi||[]).forEach(x=>{ if(x.stato==='aperto'&&x.scad<=Date.now()) x.stato='scaduto'; });
+  S.scambi=(S.scambi||[]).slice(-40);
+}
+function descriviScambio(x){
+  if(x.tipo==='servizio'){
+    const b=blocchiSett(Date.now());
+    const mio=b.find(y=>y.bk===x.mio), suo=b.find(y=>y.bk===x.suo);
+    return {mio:mio?mio.sv.nome+' · '+mio.bl.nome:'—', suo:suo?suo.sv.nome+' · '+suo.bl.nome:'—'};
+  }
+  const mio=S.missioni.find(m=>m.id===x.mio), suo=S.missioni.find(m=>m.id===x.suo);
+  return {mio:mio?mio.t:'—', suo:suo?suo.t:'—'};
+}
+function applicaScambio(x){
+  if(x.tipo==='servizio'){
+    const b=blocchiSett(Date.now());
+    const mio=b.find(y=>y.bk===x.mio), suo=b.find(y=>y.bk===x.suo);
+    if(!mio||!suo) return false;
+    S.servTurni[mio.bk]={chi:suo.chi,exchi:mio.chi};
+    S.servTurni[suo.bk]={chi:mio.chi,exchi:suo.chi};
+    return true;
+  }
+  const mio=S.missioni.find(m=>m.id===x.mio), suo=S.missioni.find(m=>m.id===x.suo);
+  if(!mio||!suo||mio.fatta||suo.fatta) return false;
+  const a=mio.chi; mio.chi=suo.chi; suo.chi=a;
+  mio.scambiata=true; suo.scambiata=true;
+  return true;
+}
+
+/* ==================== MISSIONI FLASH ==================== */
+const flashAttive=()=>S.flash.filter(f=>!f.fatta&&!f.chiuso);
+const flashMie=()=>flashAttive().filter(f=>f.a===io);
+const flashUsata=()=>S.flash.some(f=>f.da===io&&f.w===S.settimana&&!f.tornata);
+function sorteggiaFlash(f){
+  const altri=G.map(g=>g.n).filter(n=>n!==f.da&&n!==f.a);
+  const r=Math.random();
+  if(r<0.30) return f.da;
+  if(r<0.80) return f.a;
+  return altri.length?altri[Math.floor(Math.random()*altri.length)]:f.a;
+}
+function chiudiFlash(){
+  let n=0;
+  S.flash.forEach(f=>{
+    if(f.fatta||f.chiuso||f.scad>Date.now()) return;
+    f.chiuso=true; f.scaduta=true;
+    S.debiti[f.a]=(S.debiti[f.a]||0)+FLASH_MANCATA;
+    S.debiti[f.da]=(S.debiti[f.da]||0)+FLASH_LANCIO;
+    log('saltata',f.a,'Flash non conclusa: '+f.t,FLASH_MANCATA,iso(f.scad),f.id);
+    log('saltata',f.da,'Flash lanciata a vuoto: '+f.t,FLASH_LANCIO,iso(f.scad),f.id);
+    S.flashRitorno.push({t:f.t,n:f.n,da:f.da,a:f.a,ritorni:f.ritorni||0});
+    n++;
+  });
+  S.flash=S.flash.slice(-40);
+  return n;
+}
+function riportaFlash(){
+  S.flashRitorno.forEach(r=>{
+    const a=sorteggiaFlash(r);
+    S.flash.push({id:'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+      t:r.t,n:r.n,da:r.da,a,ts:Date.now(),scad:Date.now()+FLASH_ORE*36e5,
+      fatta:false,chiuso:false,w:S.settimana,ritorni:(r.ritorni||0)+1,tornata:true});
+    log('flash',a,'Flash tornata dal sacchetto: '+r.t,0);
+  });
+  S.flashRitorno=[];
+}
+
+/* ==================== ESTRAZIONE ==================== */
+/* sceglie le missioni del livello: prima gli arretrati, poi il sacco.
+   Al massimo due ristrette per livello, tante quante le persone che possono riceverle. */
+function scegliMissioni(key){
+  const pool=SACCO[key], arr=S.arretrati.filter(a=>a.liv===key);
+  const sel=[], usati=new Set(); let ristretti=0;
+  const prendi=c=>{
+    if(!c||usati.has(c.t)||sel.length>=G.length) return;
+    if(c.s&&ristretti>=ARMADIO.length) return;
+    usati.add(c.t); if(c.s) ristretti++; sel.push(c);
+  };
+  mix(arr).forEach(a=>prendi({t:a.t,n:a.n,s:a.s,g:grpDi(MISS(a.t)),
+    arr:true,volte:a.volte||1,prec:a.chi}));
+  mix(pool).forEach(m=>prendi({...m,arr:false,volte:0,prec:null}));
+  return sel;
+}
+/* assegna le missioni alle persone rispettando le percentuali.
+   Parte dalle più vincolate, così l'armadio non resta mai senza destinatario. */
+function assegna(sel){
+  for(let t=0;t<300;t++){
+    const liberi=G.map(g=>g.n), res=[];
+    const ord=mix(sel).sort((a,b)=>eleggibili(a).length-eleggibili(b).length);
+    let ok=true;
+    for(const m of ord){
+      const cand=liberi.filter(n=>eleggibili(m).includes(n));
+      if(!cand.length){ ok=false; break; }
+      const p=pesiDi(m);
+      const chi=pesa(cand.map(n=>[n,((p[n]||0)+0.001)*(m.prec===n?0.15:1)]));
+      res.push({m,chi}); liberi.splice(liberi.indexOf(chi),1);
+    }
+    if(ok) return res;
+  }
+  return sel.map((m,i)=>({m,chi:G[i%G.length].n}));
+}
+function estrai(){
+  const w=S.settimana, mens=w%4===0, out=[];
+  ['facile','media','difficile'].forEach(liv=>{
+    const key=(liv==='difficile'&&mens)?'mensile':liv;
+    assegna(scegliMissioni(key)).forEach(({m,chi})=>{
+      out.push({id:'m'+Math.random().toString(36).slice(2,9),chi,liv:key,t:m.t,n:m.n||'',
+        s:m.s||null,g:grpDi(m),arr:!!m.arr,volte:m.volte||0,fatta:false,ruba:null,exchi:null,
+        scambiata:false,scad:scadenzaDi(key)});
+    });
+  });
+  S.missioni=out; S.estratto=true; S.rivelato={};
+  S.arretrati=S.arretrati.filter(a=>!out.some(o=>o.t===a.t));
+  S.scambi=(S.scambi||[]).filter(x=>x.tipo==='servizio');
+  riportaFlash();
+  log('estrazione',io,'Ruota girata · settimana #'+S.settimana);
+}
+function nuovaSettimana(){
+  S.inizio=S.inizio?S.inizio+7*864e5:lunedi(Date.now());
+  S.settimana++; S.missioni=[]; S.estratto=false; S.rivelato={};
+}
+function chiudi(){
+  let inc=0;
+  S.missioni.forEach(m=>{
+    if(m.fatta||bloccato(m.liv,S.settimana)) return;
+    S.debiti[m.chi]=(S.debiti[m.chi]||0)+quotaDi(m); inc+=quotaDi(m);
+    log('saltata',m.chi,m.t,quotaDi(m),null,m.id);
+    const a=S.arretrati.find(x=>x.t===m.t);
+    if(a){a.volte++;a.chi=m.chi;}
+    else S.arretrati.push({t:m.t,n:m.n,liv:m.liv,s:m.s,chi:m.chi,volte:1});
+  });
+  if(S.estratto){ S.storico.unshift({w:S.settimana,inc,q:Date.now()}); S.storico=S.storico.slice(0,12); }
+  nuovaSettimana();
+  return inc;
+}
+function rollover(){ let n=0; while(Date.now()>fineSett()&&n<60){ chiudi(); n++; } return n; }
+
+/* ==================== UI ==================== */
+function toast(t){
+  const e=document.getElementById('toast'); e.textContent=t; e.classList.add('on');
+  clearTimeout(e._t); e._t=setTimeout(()=>e.classList.remove('on'),2800);
+}
+function coriandoli(x,y,q){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const cs=['#D9A441','#7ED0B4','#C2412D','#F3EDDF','#6260B8'];
+  for(let i=0;i<(q||22);i++){
+    const d=document.createElement('div'); d.className='cor';
+    d.style.background=cs[i%cs.length]; d.style.left=x+'px'; d.style.top=y+'px';
+    document.body.appendChild(d);
+    const a=Math.random()*Math.PI*2, v=60+Math.random()*140;
+    d.animate([{transform:'translate(0,0) rotate(0)',opacity:1},
+      {transform:'translate('+Math.cos(a)*v+'px,'+(Math.sin(a)*v+160)+'px) rotate('+(Math.random()*720-360)+'deg)',opacity:0}],
+      {duration:900+Math.random()*600,easing:'cubic-bezier(.2,.7,.4,1)'}).onfinish=()=>d.remove();
+  }
+}
+const SVGCHK='<svg viewBox="0 0 24 24"><polyline points="4 12.5 9.5 18 20 6.5"/></svg>';
+const ICONE={
+ missioni:'<path d="M4 6h16M4 12h16M4 18h10"/>',
+ flash:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+ calendario:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
+ spazzatura:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>',
+ lista:'<path d="M3 4h2l2.5 11h10L20 7H6"/><circle cx="10" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/>',
+ tesoretto:'<path d="M3 8h18v11H3z"/><path d="M3 8l3-4h12l3 4M12 4v15M8 12h8"/>',
+ servizi:'<path d="M4 5h16v4H4zM4 13h16v6H4z"/><path d="M8 9v4M16 9v4"/>',
+ probabilita:'<path d="M4 19V9M10 19V5M16 19v-7M22 19h-20"/>',
+ regole:'<circle cx="12" cy="12" r="9"/><path d="M12 8v.01M11 12h1v5h1"/>',
+ esci:'<path d="M15 4h3a2 2 0 012 2v12a2 2 0 01-2 2h-3M10 16l-4-4 4-4M6 12h12"/>'
+};
+
+document.getElementById('profili').innerHTML=G.map((g,i)=>
+ '<div class="prof" data-p="'+g.n+'" style="animation-delay:'+(180+i*80)+'ms">'+
+ '<div class="glow" style="background:'+g.h+'"></div>'+
+ '<div class="gettone" style="background:'+g.h+'">'+g.i+'</div>'+
+ '<div class="pn">'+g.n+'</div><div class="pr">'+g.r+'</div></div>').join('');
+/* entrata: la ruota si avvicina verso il gettone che hai toccato */
+function entra(nome,card){
+  io=nome;
+  try{ localStorage.setItem('casa-io',io); }catch(e){}
+  const g=document.getElementById('gate');
+  const lento=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(card&&!lento){
+    const r=card.getBoundingClientRect();
+    g.style.transformOrigin=((r.left+r.width/2)/innerWidth*100).toFixed(1)+'% '+
+                            ((r.top+r.height/2)/innerHeight*100).toFixed(1)+'%';
+    document.querySelectorAll('.prof').forEach(p=>p.classList.add(p===card?'scelto':'spento'));
+    const gi=document.querySelector('.gate-in'); if(gi) gi.classList.add('sfuma');
+    requestAnimationFrame(()=>{ g.classList.add('zoom');
+      g.style.transform='scale(2.9)'; g.style.opacity='0'; });
+  }else g.classList.add('via');
+  setTimeout(()=>{ g.style.display='none';
+    document.getElementById('app').style.display=''; disegna(); }, lento?300:600);
+}
+document.querySelectorAll('[data-p]').forEach(el=>{
+  el.onclick=()=>entra(el.dataset.p,el);
+});
+
+/* cambio profilo al volo, dal cerchio in alto o dal menu */
+function apriProfili(){
+  document.getElementById('sheetIn').innerHTML=
+    '<div class="grab"></div><h3>Chi ha in mano il telefono</h3>'+
+    '<div class="dsub">Tocca un nome per passare a quel profilo</div>'+
+    '<div class="pan">'+G.map(g=>'<div class="riga" data-sw="'+g.n+'">'+
+      '<span class="pall" style="background:'+g.h+'"></span>'+
+      '<span class="rt"><b>'+g.n+'</b><span>'+g.r+'</span></span>'+
+      '<span class="spunta">'+(g.n===io?'✓':'')+'</span></div>').join('')+'</div>'+
+    (pushPronte()?'<button class="btn-o" id="shPush" style="margin-top:12px">'+
+      'Attiva le notifiche su questo telefono</button>':'')+
+    '<button class="btn-g" id="shClose" style="margin-top:8px">Chiudi</button>';
+  document.getElementById('sheet').classList.add('on');
+  document.getElementById('shClose').onclick=chiudiSheet;
+  const bp=document.getElementById('shPush'); if(bp) bp.onclick=attivaPush;
+  document.querySelectorAll('#sheetIn [data-sw]').forEach(el=>{
+    el.onclick=()=>{
+      if(el.dataset.sw===io){ chiudiSheet(); return; }
+      io=el.dataset.sw;
+      try{ localStorage.setItem('casa-io',io); }catch(e){}
+      chiudiSheet(); vista='missioni'; disegna(); toast('Ora sei '+io+'.');
+    };
+  });
+}
+
+const VOCI=[['missioni','Le mie missioni'],['servizi','Servizi di casa'],['flash','Missioni flash'],
+  ['lista','Lista della spesa'],['calendario','Calendario'],['spazzatura','Spazzatura'],
+  ['tesoretto','Tesoretto'],['probabilita','Probabilità'],
+  ['regole','Regolamento'],['esci','Cambia profilo']];
+function menu(){
+  const rub=S.missioni.filter(m=>m.chi!==io&&rubabile(m)).length;
+  const fl=flashMie().length;
+  const ls=S.spesa.filter(i=>!i.presa).length;
+  const sc=scambiPerMe().length;
+  const sv=serviziSett(Date.now()).filter(t=>t.chi===io&&!t.fatta&&t.ts>Date.now()).length;
+  document.getElementById('menu').innerHTML=VOCI.map(v=>{
+    let bd='';
+    if(v[0]==='missioni'&&rub) bd='<span class="bd">'+rub+' da rubare</span>';
+    if(v[0]==='flash'&&fl) bd='<span class="bd rosso">'+fl+' per te</span>';
+    if(v[0]==='lista'&&ls) bd='<span class="bd">'+ls+' in lista</span>';
+    if(v[0]==='servizi'&&sv) bd='<span class="bd">'+sv+' turni tuoi</span>';
+    if(v[0]==='missioni'&&sc) bd='<span class="bd rosso">'+sc+' scambi</span>';
+    return '<div class="mi '+(vista===v[0]?'att':'')+'" data-v="'+v[0]+'">'+
+      '<svg viewBox="0 0 24 24">'+ICONE[v[0]]+'</svg>'+v[1]+bd+'</div>';
+  }).join('');
+  document.querySelectorAll('[data-v]').forEach(el=>{
+    el.onclick=()=>{ const v=el.dataset.v; chiudiMenu();
+      if(v==='esci'){ apriProfili(); return; }
+      vista=v; disegna(); };
+  });
+  const b=document.getElementById('tbBtn');
+  b.querySelectorAll('.dot').forEach(d=>d.remove());
+  if(fl||sc){ const d=document.createElement('span'); d.className='dot'; b.appendChild(d); }
+}
+function chiudiMenu(){ menuOpen=false;
+  document.getElementById('menu').classList.remove('open');
+  document.getElementById('tbBtn').classList.remove('open'); }
+document.getElementById('tbAv').onclick=()=>{ if(S) apriProfili(); };
+document.getElementById('tbBtn').onclick=()=>{
+  menuOpen=!menuOpen;
+  document.getElementById('menu').classList.toggle('open',menuOpen);
+  document.getElementById('tbBtn').classList.toggle('open',menuOpen);
+};
+
+function disegna(){
+  const g=G.find(x=>x.n===io)||G[0];
+  document.getElementById('tbAv').style.background=g.h;
+  document.getElementById('tbAv').textContent=g.i;
+  document.getElementById('tbNome').textContent=g.n;
+  menu();
+  const f={missioni:vMissioni,servizi:vServizi,flash:vFlash,lista:vLista,calendario:vCalendario,
+    spazzatura:vSpazzatura,tesoretto:vTesoretto,probabilita:vProbabilita,regole:vRegole}[vista]||vMissioni;
+  document.getElementById('vista').innerHTML='<div class="view">'+banner()+f()+'</div>';
+  attacca(); aggiornaTimer();
+  clearInterval(tick); tick=setInterval(aggiornaTimer,1000);
+}
+function aggiornaTimer(){
+  document.querySelectorAll('[data-cd]').forEach(e=>{
+    const r=+e.dataset.cd-Date.now(); e.textContent=conta(r);
+    e.classList.toggle('urg',r<864e5&&r>0);
+  });
+  const tb=document.getElementById('tbSett');
+  if(tb) tb.textContent='Settimana #'+S.settimana+' · chiude tra '+conta(fineSett()-Date.now());
+}
+function banner(){
+  if(Date.now()>=INIZIO_S1) return '';
+  const gg=Math.max(1,Math.ceil((INIZIO_S1-Date.now())/864e5));
+  return '<div class="debug"><b>Prova</b><span>Il progetto parte lunedì 31 agosto, fra '+gg+
+    ' giorni. Da quel momento il tabellone si azzera da solo e comincia la Settimana 1. '+
+    'Fino ad allora si gioca per fare la mano.</span></div>';
+}
+
+/* ---- card ---- */
+function cardMissione(m,idx){
+  const bl=bloccato(m.liv,S.settimana), rb=rubabile(m)&&!bl;
+  return '<div class="mcard '+(rb?'rubabile':'')+'" data-card="'+m.id+'" style="animation-delay:'+(idx*70)+'ms">'+
+    '<div class="mtop"><span class="liv liv-'+m.liv+'">'+LAB[m.liv]+'</span>'+
+    (m.arr?'<span class="tagx">Arretrato ×'+(m.volte||1)+'</span>':'')+
+    (m.ruba?'<span class="tagx" style="color:#1F8B77;border-color:#A9D6C8">Rubata a '+m.exchi+'</span>':'')+
+    (m.scambiata?'<span class="tagx" style="color:#D9A441;border-color:rgba(217,164,65,.5)">Scambiata</span>':'')+
+    '<span class="quota">'+eur(quotaDi(m))+'</span></div>'+
+    '<div class="mbody"><div class="chk '+(m.fatta?'on':'')+'" data-chk="'+m.id+'">'+SVGCHK+'</div>'+
+    '<div style="flex:1;min-width:0"><div class="mtit '+(m.fatta?'done':'')+'">'+m.t+'</div>'+
+    (m.n?'<div class="mnote">'+m.n+'</div>':'')+'</div></div>'+
+    '<div class="mfoot"><span>'+(m.fatta?'Completata':'Scade tra')+'</span>'+
+    (m.fatta?'':'<span class="cd" data-cd="'+m.scad+'">'+conta(m.scad-Date.now())+'</span>')+
+    (m.chi===io&&!m.fatta?'<button class="btn-sc" data-scm="'+m.id+'">Scambia</button>':'')+'</div>'+
+    (bl?catene(m.liv):'')+'</div>';
+}
+function cardFlash(f,idx){
+  const mia=f.a===io, sua=f.da===io;
+  return '<div class="mcard flash" style="animation-delay:'+(idx*70)+'ms">'+
+    '<div class="mtop"><span class="liv liv-flash">Flash</span>'+
+    (f.tornata?'<span class="tagx">Tornata ×'+(f.ritorni||1)+'</span>':'')+
+    '<span class="quota">'+eur(FLASH_MANCATA)+' + '+eur(FLASH_LANCIO)+'</span></div>'+
+    '<div class="mbody"><div class="chk '+(f.fatta?'on':'')+'" data-fchk="'+f.id+'">'+SVGCHK+'</div>'+
+    '<div style="flex:1;min-width:0"><div class="mtit '+(f.fatta?'done':'')+'">'+f.t+'</div>'+
+    '<div class="mnote">'+(f.n?f.n+' · ':'')+'lanciata da '+f.da+' per '+f.a+'</div></div></div>'+
+    '<div class="mfoot"><span>'+(f.fatta?'Conclusa':'Scade tra')+'</span>'+
+    (f.fatta?'':'<span class="cd" data-cd="'+f.scad+'">'+conta(f.scad-Date.now())+'</span>')+
+    (sua&&!f.fatta?'<button class="btn-x" data-fdel="'+f.id+'">Ritira</button>':'')+'</div></div>';
+}
+function catene(liv){
+  const sett=liv==='media'?'la prima settimana':'le prime due settimane';
+  const anelli=c=>Array.from({length:15},(_,i)=>
+    '<ellipse cx="'+(10+i*20)+'" cy="13" rx="11" ry="7.5" fill="none" stroke="'+c+'" stroke-width="3.6"/>').join('');
+  return '<div class="lock" data-lock="1">'+
+    '<svg class="chain a" viewBox="0 0 300 26" preserveAspectRatio="none">'+anelli('#9AA5A2')+'</svg>'+
+    '<svg class="chain b" viewBox="0 0 300 26" preserveAspectRatio="none">'+anelli('#7E8987')+'</svg>'+
+    '<svg class="pad" viewBox="0 0 24 24" fill="none">'+
+    '<path d="M7 10V7a5 5 0 0110 0v3" stroke="#D9A441" stroke-width="2" stroke-linecap="round"/>'+
+    '<rect x="4" y="10" width="16" height="11" rx="2.5" fill="#D9A441"/>'+
+    '<circle cx="12" cy="15" r="1.7" fill="#2A1D05"/>'+
+    '<path d="M12 16.5v2.2" stroke="#2A1D05" stroke-width="1.8" stroke-linecap="round"/></svg>'+
+    '<div class="lt">Bloccata '+sett+'<br>nessuna quota da pagare</div></div>';
+}
+/* ---- servizi di casa ---- */
+function panServizi(ms){
+  const b=blocchiSett(ms||Date.now()), oggi=iso(Date.now());
+  return b.map(x=>{
+    const gg=x.gg.map(gk=>{
+      const t=serviziGiorno(gk).find(y=>y.sv.k===x.sv.k), d=new Date(gk+'T12:00');
+      const persa=t&&!t.fatta&&t.ts<Date.now();
+      const cl=[t&&t.fatta?'on':'',persa?'persa':'',gk===oggi?'oggi':'',x.chi===io?'':'altro']
+        .filter(Boolean).join(' ');
+      return '<button class="'+cl+'" data-sv="'+t.k+'"><span class="dd">'+d.getDate()+'</span>'+
+        DOW[d.getDay()]+'</button>';
+    }).join('');
+    return '<div class="svc'+(x.chi===io?' mio':'')+'">'+
+      '<div class="svc-h"><span class="pall" style="background:'+x.sv.c+'"></span>'+
+      '<b>'+x.sv.nome+'</b><span class="bl">'+x.bl.nome+'</span></div>'+
+      '<div class="gio">'+gg+'</div>'+
+      '<div class="svc-f"><span class="svc-chi" style="color:'+COL(x.chi)+'">'+x.chi+
+      (x.exchi?' · scambiato con '+x.exchi:'')+'</span>'+
+      (x.chi===io?'<button class="btn-sc" data-scsv="'+x.bk+'">Scambia il turno</button>':'')+
+      '</div></div>';
+  }).join('');
+}
+function vServizi(){
+  const miei=serviziSett(Date.now()).filter(t=>t.chi===io);
+  const fatti=miei.filter(t=>t.fatta).length;
+  const rischio=miei.filter(t=>!t.fatta).length*QUOTA.servizio;
+  return '<div class="stat">'+
+    '<div class="st"><div class="sv">'+fatti+'/'+miei.length+'</div><div class="sl">Sere coperte da te</div></div>'+
+    '<div class="st"><div class="sv" style="color:'+(rischio?'#F0A99C':'#7ED0B4')+'">'+eur(rischio)+
+    '</div><div class="sl">In cassa se le salti</div></div></div>'+
+    '<div class="sez"><h2>Questa settimana</h2><div class="pan">'+panServizi(Date.now())+
+    '<p class="p" style="margin:4px 0 0;font-size:11.5px;color:#7B9188">La settimana è divisa in due blocchi: '+
+    'lunedì-giovedì e venerdì-domenica. Quattro blocchi, quattro persone, uno a testa. '+
+    'La rotazione gira da sola e copre tutte le sere.</p></div></div>'+
+    '<div class="sez"><h2>Le prossime due settimane</h2><div class="pan">'+
+    [1,2].map(w=>{
+      const mon=lunedi(Date.now()+w*7*864e5);
+      return '<div class="pgrp">Settimana del '+dataBreve(iso(mon))+'</div>'+
+        blocchiSett(mon).map(x=>'<div class="riga">'+
+        '<span class="pall" style="background:'+x.sv.c+'"></span>'+
+        '<span class="rt"><b>'+x.sv.nome+'</b><span>'+x.bl.nome+'</span></span>'+
+        '<span class="mono" style="color:'+COL(x.chi)+'">'+x.chi+'</span></div>').join('');
+    }).join('')+'</div></div>'+
+    '<div class="sez"><div class="pan"><p class="p" style="margin:0">Fuori dalla ruota: i servizi non si '+
+    'estraggono, arrivano da soli. Sera saltata: <b style="color:var(--gold)">'+eur(QUOTA.servizio)+
+    '</b> in cassa, addebitati la mattina dopo alle 10:00.</p></div></div>';
+}
+
+/* ---- probabilità ---- */
+let PIDX=[], pApri=null, pMiss=null;
+function barraPerc(m){
+  const p=percInt(pesiDi(m));
+  return '<div class="barra">'+Object.keys(p).map(n=>
+    '<i style="width:'+p[n]+'%;background:'+COL(n)+'"></i>').join('')+'</div>';
+}
+function controlliPerc(key,m){
+  const p=percInt(pesiDi(m));
+  return barraPerc(m)+'<div class="pctrl">'+eleggibili(m).map(n=>{
+    const gi=PIDX.push({key,m,chi:n,d:-5})-1, pi=PIDX.push({key,m,chi:n,d:5})-1;
+    return '<div class="pline"><span class="pall" style="background:'+COL(n)+'"></span>'+
+      '<span class="nm">'+n+'</span>'+
+      '<button data-pm="'+gi+'">−</button>'+
+      '<span class="vv">'+p[n]+'%</span>'+
+      '<button data-pm="'+pi+'">+</button></div>';
+  }).join('')+'</div>'+
+  (pesoToccato(key)?'<button class="btn-sc" data-pr="'+
+    (PIDX.push({key,reset:true})-1)+'" style="margin-top:10px">Torna equa</button>':'');
+}
+function vProbabilita(){
+  PIDX=[];
+  const usati=GRUPPI.filter(g=>TUTTE().some(m=>grpDi(m)===g.k));
+  let h='<div class="sez"><div class="pan"><p class="p" style="margin:0">Di base ogni missione ha la stessa '+
+    'probabilità di capitare a chiunque. Se sposti una percentuale compare la barra coi vostri colori. '+
+    'È un peso sull\'estrazione, non una garanzia: ogni livello assegna quattro missioni diverse a '+
+    'quattro persone diverse, quindi resta comunque un incastro.</p></div></div>';
+  h+='<div class="sez"><h2>Gruppi</h2><div class="pan">';
+  usati.forEach(g=>{
+    const key='g:'+g.k, esempio=TUTTE().find(m=>grpDi(m)===g.k);
+    const n=TUTTE().filter(m=>grpDi(m)===g.k).length;
+    const tocc=pesoToccato(key), ap=pApri===g.k;
+    const ti=PIDX.push({apri:g.k})-1;
+    h+='<div class="prow"><div class="prow-h" data-pa="'+ti+'">'+
+      '<span class="pall" style="background:'+(tocc?'#D9A441':'#4A5F58')+'"></span>'+
+      '<span class="pt"><b>'+g.nome+'</b><span>'+n+' mission'+(n===1?'e':'i')+'</span></span>'+
+      '<span class="stato '+(tocc?'att':'')+'">'+(tocc?'su misura':'equa')+'</span></div>'+
+      (tocc&&!ap?barraPerc(esempio):'');
+    if(ap){
+      h+=controlliPerc(key,esempio);
+      h+='<div class="pgrp">Eccezioni su singole missioni</div>';
+      TUTTE().filter(m=>grpDi(m)===g.k).forEach(m=>{
+        const mk='m:'+m.t, mt=pesoToccato(mk), mo=pMiss===m.t;
+        const mi=PIDX.push({apriM:m.t})-1;
+        h+='<div class="prow"><div class="prow-h" data-pa="'+mi+'">'+
+          '<span class="pt"><b style="font-weight:500;font-size:12.5px">'+m.t+'</b>'+
+          '<span>'+LAB[m.liv]+(m.s?' · solo '+m.s.join(' e '):'')+'</span></span>'+
+          '<span class="stato '+(mt?'att':'')+'">'+(mt?'eccezione':'segue il gruppo')+'</span></div>'+
+          (mt&&!mo?barraPerc(m):'')+(mo?controlliPerc(mk,m):'')+'</div>';
+      });
+    }
+    h+='</div>';
+  });
+  h+='</div></div>';
+  return h;
+}
+
+/* ---- scambi ---- */
+function panScambi(){
+  const per=scambiPerMe(), mie=scambiMiei();
+  if(!per.length&&!mie.length) return '';
+  let h='<div class="sez"><h2>Proposte di scambio</h2>';
+  per.forEach(x=>{
+    const d=descriviScambio(x);
+    h+='<div class="sc"><div class="sc-t">'+x.da+' ti propone uno scambio</div>'+
+      '<div class="sc-b"><span class="pall" style="background:'+COL(x.da)+'"></span>'+
+      '<span class="fr"><b>'+esc(d.mio)+'</b><span>passa a te</span></span></div>'+
+      '<div class="sc-ar">↕</div>'+
+      '<div class="sc-b"><span class="pall" style="background:'+COL(x.a)+'"></span>'+
+      '<span class="fr"><b>'+esc(d.suo)+'</b><span>passa a '+x.da+'</span></span></div>'+
+      '<div class="sc-az"><button data-scno="'+x.id+'">Rifiuta</button>'+
+      '<button class="si" data-scok="'+x.id+'">Accetta</button></div></div>';
+  });
+  mie.forEach(x=>{
+    const d=descriviScambio(x);
+    h+='<div class="sc" style="opacity:.72"><div class="sc-t">In attesa di '+x.a+'</div>'+
+      '<div class="sc-b"><span class="fr"><b>'+esc(d.mio)+'</b><span>la tua</span></span></div>'+
+      '<div class="sc-ar">↕</div>'+
+      '<div class="sc-b"><span class="fr"><b>'+esc(d.suo)+'</b><span>la sua</span></span></div>'+
+      '<div class="sc-az"><button data-scdel="'+x.id+'">Ritira la proposta</button></div></div>';
+  });
+  return h+'</div>';
+}
+function apriScambio(tipo,rif){
+  let h='<div class="grab"></div><h3>Proponi uno scambio</h3>';
+  if(tipo==='servizio'){
+    const b=blocchiSett(Date.now()), mio=b.find(x=>x.bk===rif);
+    if(!mio){ toast('Turno non trovato.'); return; }
+    h+='<div class="dsub">Dai via: '+mio.sv.nome+' · '+mio.bl.nome+'</div><div class="pan">'+
+      b.filter(x=>x.chi!==io).map(x=>'<div class="riga" data-scpick="'+x.bk+'">'+
+        '<span class="pall" style="background:'+COL(x.chi)+'"></span>'+
+        '<span class="rt"><b>'+x.sv.nome+'</b><span>'+x.chi+' · '+x.bl.nome+'</span></span>'+
+        '<span class="spunta">→</span></div>').join('')+'</div>';
+  }else{
+    const mio=S.missioni.find(m=>m.id===rif);
+    if(!mio){ toast('Missione non trovata.'); return; }
+    const cand=S.missioni.filter(m=>m.chi!==io&&!m.fatta&&
+      (!m.s||m.s.includes(io))&&(!mio.s||mio.s.includes(m.chi)));
+    h+='<div class="dsub">Dai via: '+esc(mio.t)+'</div><div class="pan">'+
+      (cand.length?cand.map(m=>'<div class="riga" data-scpick="'+m.id+'">'+
+        '<span class="pall" style="background:'+COL(m.chi)+'"></span>'+
+        '<span class="rt"><b>'+esc(m.t)+'</b><span>'+m.chi+' · '+LAB[m.liv]+' · '+eur(quotaDi(m))+'</span></span>'+
+        '<span class="spunta">→</span></div>').join('')
+       :'<div class="vuoto">Nessuna missione scambiabile. Le missioni dell\'armadio restano fra Samuel e Thomas.</div>')+
+      '</div>';
+  }
+  h+='<button class="btn-g" id="shClose" style="margin-top:12px">Annulla</button>';
+  document.getElementById('sheetIn').innerHTML=h;
+  document.getElementById('sheet').classList.add('on');
+  document.getElementById('shClose').onclick=chiudiSheet;
+  document.querySelectorAll('#sheetIn [data-scpick]').forEach(el=>{
+    el.onclick=async()=>{
+      const suo=el.dataset.scpick;
+      const a=tipo==='servizio'
+        ? (blocchiSett(Date.now()).find(x=>x.bk===suo)||{}).chi
+        : (S.missioni.find(m=>m.id===suo)||{}).chi;
+      if(!a) return;
+      S.scambi.push({id:'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+        tipo,da:io,a,mio:rif,suo,ts:Date.now(),scad:Date.now()+SCAMBIO_ORE*36e5,stato:'aperto'});
+      log('scambio',a,'Scambio proposto da '+io,0);
+      await salva(); avvisa(a,'Proposta di scambio',io+' ti propone uno scambio.');
+      chiudiSheet(); disegna(); toast('Proposta mandata a '+a+'.');
+    };
+  });
+}
+
+function bidoniSett(){
+  const t=turniSett(Date.now());
+  if(!t.length) return '<div class="pan"><div class="vuoto">Nessun ritiro questa settimana. '+
+    'Plastica e carta passano a settimane alterne.</div></div>';
+  return '<div class="pan">'+t.map(x=>
+    '<div class="riga"><span class="pall" style="background:'+x.tp.c+'"></span>'+
+    '<span class="rt"><b>'+x.tp.nome+'</b><span>'+dataBreve(x.giorno)+' · '+x.chi+
+    (x.da?' (rubato a '+x.da+')':'')+'</span></span>'+
+    '<button class="mini '+(x.fatta?'on':'')+'" data-sp="'+x.k+'" aria-label="Segna fatto">'+
+    (x.fatta?'✓':'')+'</button></div>').join('')+
+    '<p class="p" style="margin:10px 0 0;font-size:11.5px;color:#7B9188">Turni a rotazione automatica. '+
+    'Bidone dimenticato: '+eur(QUOTA.spazzatura)+' addebitati da soli dopo le 07:00.</p></div>';
+}
+
+/* ---- roulette ---- */
+function vRoulette(){
+  const gia=S.estratto, mens=S.settimana%4===0;
+  const slot=l=>'<div class="slot"><div class="sk"></div><div><div class="s1">'+l+'</div>'+
+    '<div class="s2">— — — — —</div></div></div>';
+  return '<div class="sez"><div class="pan" style="text-align:center;padding:18px 14px 16px">'+
+    '<div class="ruota"><div class="pin"></div><div class="disco"></div></div>'+
+    '<h2 style="justify-content:center;margin-bottom:6px">'+(gia?'Le tue tre buste':'Il sacchetto è chiuso')+'</h2>'+
+    '<p class="p" style="text-align:center">'+(gia
+      ? 'La ruota ha già girato per la casa. Tocca per scoprire cosa è finito a te.'
+      : 'Tre missioni a testa, decise dalla sorte. Chi gira per primo estrae per tutti.')+'</p>'+
+    '<div style="text-align:left;margin:14px 0 16px">'+
+    slot('Missione facile')+slot('Missione media')+slot(mens?'Missione mensile':'Missione difficile')+'</div>'+
+    '<button class="btn" id="bSpin">Tenta la sorte</button></div></div>'+
+    '<div class="sez"><h2>Servizi di questa settimana</h2><div class="pan">'+panServizi(Date.now())+
+    '<p class="p" style="margin:4px 0 0;font-size:11.5px;color:#7B9188">I servizi non passano dalla ruota: '+
+    'arrivano a turno e coprono tutte le sere.</p></div></div>'+
+    '<div class="sez"><h2>Bidoni di questa settimana</h2>'+bidoniSett()+'</div>';
+}
+function vMissioni(){
+  if(!S.rivelato[io]) return vRoulette();
+  const mie=S.missioni.filter(m=>m.chi===io);
+  const altri=S.missioni.filter(m=>m.chi!==io);
+  const rub=altri.filter(m=>rubabile(m));
+  const attive=mie.filter(m=>!bloccato(m.liv,S.settimana));
+  const fatte=attive.filter(m=>m.fatta).length;
+  const fl=flashMie();
+  const svr=serviziSett(Date.now()).filter(t=>t.chi===io&&!t.fatta).length*QUOTA.servizio;
+  const rischio=attive.filter(m=>!m.fatta).reduce((a,m)=>a+quotaDi(m),0)+fl.length*FLASH_MANCATA+svr;
+  return '<div class="stat">'+
+    '<div class="st"><div class="sv">'+fatte+'/'+attive.length+'</div><div class="sl">Missioni completate</div></div>'+
+    '<div class="st"><div class="sv" style="color:'+(rischio?'#F0A99C':'#7ED0B4')+'">'+eur(rischio)+
+    '</div><div class="sl">In cassa se non le fai</div></div></div>'+
+    panScambi()+
+    (fl.length?'<div class="sez"><h2>Flash in corso</h2>'+fl.map((f,i)=>cardFlash(f,i)).join('')+'</div>':'')+
+    (rub.length?'<div class="sez"><h2>Colpo grosso</h2><div class="pan" style="padding:12px 13px">'+
+      '<p class="p">Meno di 24 ore alla scadenza. Se la rubi e la porti a casa, chi ce l\'aveva ti paga metà quota.</p>'+
+      rub.map(m=>'<div class="riga"><span class="pall" style="background:'+COL(m.chi)+'"></span>'+
+      '<span class="rt"><b>'+m.t+'</b><span>'+m.chi+' · scade tra <span data-cd="'+m.scad+'">'+
+      conta(m.scad-Date.now())+'</span></span></span>'+
+      '<button class="btn-ruba" data-ruba="'+m.id+'">Ruba '+eur(quotaDi(m)/2)+'</button></div>').join('')+
+      '</div></div>':'')+
+    '<div class="sez"><h2>Le tue missioni</h2>'+mie.map((m,i)=>cardMissione(m,i)).join('')+'</div>'+
+    '<div class="sez"><h2>Servizi di questa settimana</h2><div class="pan">'+panServizi(Date.now())+'</div></div>'+
+    '<div class="sez"><h2>Bidoni di questa settimana</h2>'+bidoniSett()+'</div>'+
+    '<div class="sez"><h2>Il resto della casa</h2><div class="pan">'+
+    altri.map(m=>'<div class="riga"><span class="pall" style="background:'+COL(m.chi)+'"></span>'+
+    '<span class="rt"><b>'+m.t+'</b><span>'+m.chi+' · '+LAB[m.liv]+
+    (bloccato(m.liv,S.settimana)?' · bloccata':'')+'</span></span>'+
+    '<span class="spunta">'+(m.fatta?'✓':'')+'</span></div>').join('')+'</div></div>'+
+    '<div class="sez"><h2>Chiusura</h2><div class="pan">'+
+    '<p class="p">La settimana si chiude da sola. Puoi anche chiuderla adesso: quello che non è spuntato '+
+    'va in cassa e torna nel sacchetto come arretrato.</p>'+
+    '<button class="btn-o" id="bChiudi">Chiudi la settimana e rigira</button></div></div>';
+}
+
+/* ---- flash ---- */
+function vFlash(){
+  const usata=flashUsata();
+  const attive=flashAttive().sort((a,b)=>a.scad-b.scad);
+  const chiuse=S.flash.filter(f=>f.fatta||f.chiuso).slice(-6).reverse();
+  const altri=G.filter(g=>g.n!==io);
+  if(!flashA||flashA===io) flashA=altri[0].n;
+  return '<div class="sez"><div class="pan">'+
+    '<h2 style="margin-bottom:8px">Lancia una flash</h2>'+
+    '<p class="p">Una richiesta secca a un\'altra persona di casa: ha '+FLASH_ORE+' ore per farla. '+
+    'Ne puoi lanciare una a settimana. Se scade paghi '+eur(FLASH_LANCIO)+' anche tu, quindi lanciala per cose vere.</p>'+
+    (usata
+      ? '<div class="vuoto">Hai già usato la tua flash di questa settimana. Ricarica lunedì.</div>'
+      : '<input class="inp" id="flT" placeholder="Cosa serve, in poche parole">'+
+        '<input class="inp" id="flN" placeholder="Dettaglio (facoltativo)">'+
+        '<div class="chip">'+altri.map(g=>'<button data-fa="'+g.n+'" class="'+(flashA===g.n?'on':'')+
+          '" style="'+(flashA===g.n?'background:'+g.h:'')+'">'+g.n+'</button>').join('')+'</div>'+
+        '<button class="btn btn-r" id="bFlash">Lancia la flash</button>')+
+    '</div></div>'+
+    '<div class="sez"><h2>In corso in casa</h2>'+
+    (attive.length?attive.map((f,i)=>cardFlash(f,i)).join('')
+     :'<div class="pan"><div class="vuoto">Nessuna flash aperta. Aria tranquilla.</div></div>')+'</div>'+
+    (S.flashRitorno.length?'<div class="sez"><h2>Tornano al prossimo giro</h2><div class="pan">'+
+      S.flashRitorno.map(r=>'<div class="riga"><span class="pall" style="background:'+COL(r.a)+'"></span>'+
+      '<span class="rt"><b>'+r.t+'</b><span>rilanciata alla prossima estrazione</span></span></div>').join('')+
+      '<p class="p" style="margin:10px 0 0;font-size:11.5px;color:#7B9188">Al prossimo giro di ruota: '+
+      '30% a chi l\'ha lanciata, 50% a chi l\'aveva ricevuta, 20% agli altri due.</p></div></div>':'')+
+    '<div class="sez"><h2>Ultime chiuse</h2><div class="pan">'+
+    (chiuse.length?chiuse.map(f=>'<div class="riga">'+
+      '<span class="pall" style="background:'+COL(f.a)+'"></span>'+
+      '<span class="rt"><b>'+f.t+'</b><span>'+f.da+' → '+f.a+' · '+
+      (f.fatta?'conclusa':'scaduta')+'</span></span>'+
+      '<span class="mono" style="color:'+(f.fatta?'#7ED0B4':'#F0A99C')+'">'+
+      (f.fatta?'✓':eur(FLASH_MANCATA+FLASH_LANCIO))+'</span></div>').join('')
+     :'<div class="vuoto">Ancora nessuna flash chiusa.</div>')+'</div></div>';
+}
+
+/* ---- lista della spesa ---- */
+function rigaLista(i){
+  const obj=S.obiettivo&&S.obiettivo.rif===i.id;
+  return '<div class="riga"><span class="pall" style="background:'+catC(i.cat)+
+    ';opacity:'+(i.presa?'.35':'1')+'"></span>'+
+    '<span class="rt"><b'+(i.presa?' style="text-decoration:line-through;color:#7B9188"':'')+'>'+
+    esc(i.t)+'</b><span>'+(i.n?esc(i.n)+' · ':'')+esc(i.chi)+
+    (obj?' · <span style="color:#D9A441">obiettivo della cassa</span>':'')+'</span></span>'+
+    '<button class="mini '+(i.presa?'on':'')+'" data-lspr="'+i.id+'" aria-label="Segna comprato">'+
+    (i.presa?'✓':'')+'</button>'+
+    '<button class="mini" data-lsdel="'+i.id+'" aria-label="Togli dalla lista">×</button></div>';
+}
+function vLista(){
+  const aperti=S.spesa.filter(i=>!i.presa);
+  const prese=S.spesa.filter(i=>i.presa).sort((a,b)=>(b.tsp||0)-(a.tsp||0)).slice(0,8);
+  return '<div class="sez"><div class="pan">'+
+    '<h2 style="margin-bottom:8px">Aggiungi alla lista</h2>'+
+    '<p class="p">La lista è di tutti e non c\'entra con la ruota: nessuno viene sorteggiato per andare '+
+    'a comprare. Scrivi quello che manca, chi passa dal negozio lo spunta.</p>'+
+    '<input class="inp" id="lsT" placeholder="Cosa manca">'+
+    '<input class="inp" id="lsN" placeholder="Quantità, marca, misura (facoltativo)">'+
+    '<div class="chip">'+CATS.map(c=>'<button data-lscat="'+c.k+'" class="'+(catSel===c.k?'on':'')+
+      '" style="'+(catSel===c.k?'background:'+c.c:'')+'">'+c.corto+'</button>').join('')+'</div>'+
+    '<button class="btn" id="bAddLs">Aggiungi</button></div></div>'+
+    CATS.map(c=>{
+      const l=aperti.filter(i=>i.cat===c.k);
+      return '<div class="sez"><h2>'+c.nome+'</h2><div class="pan">'+
+        (l.length?l.map(rigaLista).join(''):'<div class="vuoto">'+c.vuoto+'</div>')+
+        (c.k==='casa'?'<p class="p" style="margin:10px 0 0;font-size:11.5px;color:#7B9188">'+
+         'Roba che serve a tutti e si compra una volta sola. Dal Tesoretto puoi puntarne una: '+
+         'diventa l\'obiettivo della cassa comune.</p>':'')+'</div></div>';
+    }).join('')+
+    '<div class="sez"><h2>Già comprato</h2><div class="pan">'+
+    (prese.length?prese.map(rigaLista).join('')+
+      '<p class="p" style="margin:10px 0 0;font-size:11.5px;color:#7B9188">'+
+      'Tocca la spunta per rimetterlo in lista.</p>'
+     :'<div class="vuoto">Ancora niente spuntato.</div>')+'</div></div>';
+}
+
+/* ---- calendario ---- */
+function vCalendario(){
+  const oggi=new Date();
+  if(!calMese) calMese=new Date(oggi.getFullYear(),oggi.getMonth(),1);
+  const y=calMese.getFullYear(), mo=calMese.getMonth();
+  const off=(new Date(y,mo,1).getDay()+6)%7, gg=new Date(y,mo+1,0).getDate();
+  let celle='';
+  for(let i=0;i<off;i++) celle+='<div class="day off"></div>';
+  for(let d=1;d<=gg;d++){
+    const dt=new Date(y,mo,d), k=iso(dt);
+    const ev=S.eventi.filter(e=>e.d===k);
+    const lg=S.log.filter(l=>l.g===k&&(l.tipo==='fatta'||l.tipo==='rubata'));
+    const ri=turniGiorno(k);
+    celle+='<div class="day '+(dt.toDateString()===oggi.toDateString()?'oggi':'')+' '+(ri.length?'rit':'')+
+      '" data-day="'+k+'" style="animation-delay:'+((off+d)*10)+'ms">'+d+
+      '<span class="dots">'+
+      lg.slice(0,3).map(l=>'<i style="background:'+COL(l.chi)+'"></i>').join('')+
+      ev.slice(0,2).map(()=>'<i style="background:#F3EDDF;opacity:.7"></i>').join('')+
+      ri.slice(0,2).map(r=>'<i style="background:'+r.tp.c+';opacity:.55"></i>').join('')+
+      '</span></div>';
+  }
+  const futuri=S.eventi.filter(e=>e.d>=iso(oggi)).sort((a,b)=>a.d<b.d?-1:1).slice(0,6);
+  const diario=S.log.filter(l=>l.tipo!=='estrazione').slice(0,8);
+  return '<div class="sez"><div class="pan">'+
+    '<div class="cal-h"><button class="nav" data-mese="-1">‹</button><b>'+MESI[mo]+' '+y+
+    '</b><button class="nav" data-mese="1">›</button></div>'+
+    '<div class="dows">'+['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].map(d=>'<span>'+d+'</span>').join('')+'</div>'+
+    '<div class="grid">'+celle+'</div>'+
+    '<div class="lg"><span><i style="background:#7ED0B4;opacity:.55"></i>ritiro</span>'+
+    '<span><i style="background:#F3EDDF;opacity:.7"></i>evento</span>'+
+    '<span><i style="background:#C9932F"></i>attività fatta</span></div>'+
+    '<p class="p" style="text-align:center;margin:12px 0 0;font-size:11.5px;color:#7B9188">'+
+    'Tocca un giorno per vedere bidoni, attività completate ed eventi.</p></div></div>'+
+    '<div class="sez"><h2>In arrivo</h2><div class="pan">'+
+    (futuri.length?futuri.map(e=>'<div class="riga"><span class="rt"><b>'+e.t+'</b><span>'+
+      dataBreve(e.d)+' · '+e.chi+'</span></span>'+
+      '<button class="mini" data-delev="'+e.id+'">×</button></div>').join('')
+     :'<div class="vuoto">Niente in agenda. Tocca un giorno per segnare qualcosa.</div>')+'</div></div>'+
+    '<div class="sez"><h2>Diario di casa</h2><div class="pan">'+
+    (diario.length?diario.map(l=>'<div class="riga">'+
+      '<span class="pall" style="background:'+COL(l.chi)+'"></span>'+
+      '<span class="rt"><b>'+l.testo+'</b><span>'+l.chi+' · '+etichetta(l.tipo)+' · '+
+      new Date(l.ts).toLocaleDateString('it-IT')+'</span></span></div>').join('')
+     :'<div class="vuoto">Ancora niente. La prima spunta apre il diario.</div>')+'</div></div>';
+}
+const etichetta=t=>({fatta:'completata',rubata:'rubata',saltata:'saltata',flash:'flash',
+  spesa:'spesa comune',versamento:'versamento',estrazione:'estrazione'}[t]||t);
+
+/* ---- sheet giorno ---- */
+function apriGiorno(k){
+  const dt=new Date(k+'T12:00');
+  const ri=turniGiorno(k);
+  const lg=S.log.filter(l=>l.g===k&&l.tipo!=='estrazione');
+  const ev=S.eventi.filter(e=>e.d===k);
+  const fl=S.flash.filter(f=>iso(f.ts)===k||iso(f.scad)===k);
+  let h='<div class="grab"></div><h3>'+DOWL[dt.getDay()]+' '+dt.getDate()+' '+MESI[dt.getMonth()]+'</h3>'+
+    '<div class="dsub">Giornata di casa</div>';
+  h+='<div class="sez"><h2>Bidoni</h2><div class="pan">'+
+    (ri.length?ri.map(x=>'<div class="riga"><span class="pall" style="background:'+x.tp.c+'"></span>'+
+      '<span class="rt"><b>'+x.tp.nome+'</b><span>fuori entro le 07:00 · '+x.chi+'</span></span>'+
+      '<button class="mini '+(x.fatta?'on':'')+'" data-sp="'+x.k+'">'+(x.fatta?'✓':'')+'</button></div>').join('')
+     :'<div class="vuoto">Nessun ritiro in questo giorno.</div>')+'</div></div>';
+  const sv=serviziGiorno(k);
+  h+='<div class="sez"><h2>Servizi</h2><div class="pan">'+
+    (sv.length?sv.map(x=>'<div class="riga"><span class="pall" style="background:'+x.sv.c+'"></span>'+
+      '<span class="rt"><b>'+x.sv.nome+'</b><span>'+x.chi+'</span></span>'+
+      '<button class="mini '+(x.fatta?'on':'')+'" data-ss="'+x.k+'">'+(x.fatta?'✓':'')+'</button></div>').join('')
+     :'<div class="vuoto">Nessun servizio in questo giorno.</div>')+'</div></div>';
+  h+='<div class="sez"><h2>Attività</h2><div class="pan">'+
+    (lg.length?lg.map(l=>'<div class="riga"><span class="pall" style="background:'+COL(l.chi)+'"></span>'+
+      '<span class="rt"><b>'+l.testo+'</b><span>'+l.chi+' · '+etichetta(l.tipo)+'</span></span>'+
+      (l.val?'<span class="mono" style="color:#F0A99C">'+eur(l.val)+'</span>':'')+'</div>').join('')
+     :'<div class="vuoto">Nessuna attività registrata.</div>')+'</div></div>';
+  if(fl.length) h+='<div class="sez"><h2>Flash</h2><div class="pan">'+fl.map(f=>
+    '<div class="riga"><span class="pall" style="background:'+COL(f.a)+'"></span>'+
+    '<span class="rt"><b>'+f.t+'</b><span>'+f.da+' → '+f.a+' · '+
+    (f.fatta?'conclusa':f.chiuso?'scaduta':'in corso')+'</span></span></div>').join('')+'</div></div>';
+  h+='<div class="sez"><h2>Eventi</h2><div class="pan">'+
+    (ev.length?ev.map(e=>'<div class="riga"><span class="rt"><b>'+e.t+'</b><span>'+e.chi+'</span></span>'+
+      '<button class="mini" data-delev="'+e.id+'">×</button></div>').join('')
+     :'<div class="vuoto">Niente di segnato.</div>')+
+    '<div class="row" style="margin-top:12px"><input class="inp" id="evT" style="margin:0" '+
+    'placeholder="Cena, ospiti, compleanno…"><button class="btn-s" data-addev="'+k+'">Aggiungi</button></div>'+
+    '</div></div><button class="btn-g" id="shClose" style="margin-top:4px">Chiudi</button>';
+  document.getElementById('sheetIn').innerHTML=h;
+  document.getElementById('sheet').classList.add('on');
+  attaccaSheet(k);
+}
+function chiudiSheet(){ document.getElementById('sheet').classList.remove('on'); }
+document.getElementById('sheetBk').onclick=chiudiSheet;
+function attaccaSheet(k){
+  document.getElementById('shClose').onclick=chiudiSheet;
+  document.querySelectorAll('#sheetIn [data-sp]').forEach(el=>{
+    el.onclick=async()=>{ await toggleSpazz(el.dataset.sp); disegna(); apriGiorno(k); };
+  });
+  document.querySelectorAll('#sheetIn [data-ss]').forEach(el=>{
+    el.onclick=async()=>{ await toggleServ(el.dataset.ss); disegna(); apriGiorno(k); };
+  });
+  document.querySelectorAll('#sheetIn [data-delev]').forEach(el=>{
+    el.onclick=async()=>{ S.eventi=S.eventi.filter(e=>e.id!==el.dataset.delev);
+      await salva(); disegna(); apriGiorno(k); };
+  });
+  const add=document.querySelector('#sheetIn [data-addev]');
+  if(add) add.onclick=async()=>{
+    const t=document.getElementById('evT').value.trim();
+    if(!t){ toast('Scrivi cosa succede quel giorno.'); return; }
+    S.eventi.push({id:'e'+Date.now(),d:k,t,chi:io});
+    await salva(); disegna(); apriGiorno(k); toast('Evento segnato.');
+  };
+}
+
+/* ---- spazzatura ---- */
+function vSpazzatura(){
+  const p=prossimoTurno();
+  return '<div class="sez"><div class="pan"><div class="next"><div class="nt">Prossimo ritiro</div>'+
+    (p?'<div class="nn" style="color:'+p.tp.c+'">'+p.tp.nome+'</div><div class="nc">'+p.chi+
+      ' · tra <span data-cd="'+p.ts+'">'+conta(p.ts-Date.now())+'</span></div>'
+     :'<div class="nn" style="font-size:16px;color:#7B9188">Nessun giorno impostato</div>')+'</div>'+
+    TIPI.map(tp=>{
+      const pr=prossimoDiTipo(tp.k);
+      return '<div class="tipo"><div class="tipo-h"><span class="sq" style="background:'+tp.c+
+      '"></span><b>'+tp.nome+'</b><span class="fq">'+(tp.ogni===2?'ogni 2 settimane':'ogni settimana')+'</span></div>'+
+      '<div class="gg">'+[1,2,3,4,5,6,0].map(d=>{const on=(S.ritiri[tp.k]||[]).includes(d);
+        return '<button class="g '+(on?'on':'')+'" data-rit="'+tp.k+'|'+d+'" style="'+
+          (on?'background:'+tp.c+';border-color:'+tp.c:'')+'">'+DOW[d][0]+DOW[d][1].toLowerCase()+'</button>';
+      }).join('')+'</div>'+
+      (tp.ogni===2?'<div class="par"><span>'+(pr?'prossimo: '+dataBreve(pr.giorno):'nessun giorno scelto')+
+        '</span><button data-par="'+tp.k+'">Sposta di una settimana</button></div>':'')+
+      '</div>';
+    }).join('')+
+    '<p class="p" style="margin:2px 0 0;font-size:11.5px;color:#7B9188">I giorni scelti generano i turni in automatico, '+
+    'a rotazione fra tutti e quattro. Nessuna estrazione, nessuna discussione.</p></div></div>'+
+    '<div class="sez"><h2>Turni di questa settimana</h2>'+bidoniSett()+'</div>'+
+    '<div class="sez"><h2>Le prossime due settimane</h2><div class="pan">'+
+    ([1,2].map(w=>turniSett(Date.now()+w*7*864e5).map(x=>
+      '<div class="riga"><span class="pall" style="background:'+x.tp.c+'"></span>'+
+      '<span class="rt"><b>'+x.tp.nome+'</b><span>'+dataBreve(x.giorno)+'</span></span>'+
+      '<span class="mono" style="color:'+COL(x.chi)+'">'+x.chi+'</span></div>').join('')).join('')
+      ||'<div class="vuoto">Niente in programma.</div>')+'</div></div>'+
+    '<div class="sez"><div class="pan"><p class="p" style="margin:0">Il bidone è la missione più facile della casa '+
+    'e una delle più care: <b style="color:var(--gold)">'+eur(QUOTA.spazzatura)+'</b> ogni volta che resta dentro. '+
+    'L\'addebito parte da solo dopo le 07:00.</p></div></div>';
+}
+function prossimoDiTipo(k){ return prossimoTurno(k); }
+
+/* ---- obiettivo della cassa ---- */
+function panObiettivo(){
+  const ob=S.obiettivo;
+  if(ob){
+    const p=Math.max(0,Math.min(100,Math.round(S.cassa/ob.costo*100)));
+    const manca=Math.round(Math.max(0,ob.costo-S.cassa)*100)/100;
+    return '<div class="sez"><h2>Obiettivo della cassa</h2><div class="pan">'+
+      '<div class="ob"><b>'+esc(ob.t)+'</b><span class="oc">'+eur(ob.costo)+'</span></div>'+
+      '<div class="obar"><span class="fil" data-w="'+p+'" style="background:var(--gold)"></span></div>'+
+      '<p class="p" style="margin:10px 0 0">'+(manca>0
+        ? 'In cassa '+eur(S.cassa)+' su '+eur(ob.costo)+'. Mancano <b style="color:var(--gold)">'+
+          eur(manca)+'</b>, siete al '+p+'%.'
+        : 'Ci siete: in cassa '+eur(S.cassa)+' su '+eur(ob.costo)+'. Si può comprare.')+'</p>'+
+      '<div class="row" style="margin-top:11px">'+
+      '<button class="btn-g" id="bObjOk" style="margin:0">Comprato</button>'+
+      '<button class="btn-g" id="bObjNo" style="margin:0">Cambia obiettivo</button></div>'+
+      '</div></div>';
+  }
+  const cand=S.spesa.filter(i=>!i.presa);
+  return '<div class="sez"><h2>Obiettivo della cassa</h2><div class="pan">'+
+    '<p class="p">Punta una voce della lista della spesa: ti chiedo quanto costa e la cassa comune '+
+    'si riempie verso quella cifra.</p>'+
+    (cand.length?cand.map(i=>'<div class="riga"><span class="pall" style="background:'+catC(i.cat)+
+      '"></span><span class="rt"><b>'+esc(i.t)+'</b><span>'+(i.n?esc(i.n)+' · ':'')+esc(i.chi)+
+      '</span></span><button class="btn-s" data-obj="'+i.id+'">Punta</button></div>').join('')
+     :'<div class="vuoto">La lista della spesa è vuota. Aggiungi qualcosa dal menù.</div>')+
+    '</div></div>';
+}
+
+/* ---- tesoretto ---- */
+function vTesoretto(){
+  const daVersare=Object.values(S.debiti).reduce((a,b)=>a+b,0);
+  const max=Math.max(1,...Object.values(S.debiti));
+  const monete=Math.min(10,Math.max(1,Math.ceil(S.cassa/10)));
+  const mov=S.movimenti.slice(0,8);
+  return '<div class="sez"><div class="pan"><div class="forziere">'+
+    '<div class="monete">'+Array.from({length:monete},(_,i)=>
+      '<span class="moneta" style="animation-delay:'+(i*70)+'ms"></span>').join('')+'</div>'+
+    '<div class="cifra" id="cifra">€ 0</div>'+
+    '<div class="cifra-l">Cassa comune di casa</div></div>'+
+    '<p class="p" style="text-align:center">Sono i soldi delle missioni saltate. Si usano per la casa: '+
+    'pizza, gita, gelato, quello che decidete insieme.</p>'+
+    '<div class="row"><input class="inp" id="spC" style="margin:0" placeholder="Spesa (pizza, cinema…)">'+
+    '<input class="inp" id="spV" style="margin:0;width:82px" inputmode="decimal" placeholder="€">'+
+    '<button class="btn-s" id="bSpesa">Segna</button></div></div></div>'+
+    panObiettivo()+
+    '<div class="sez"><h2>Da versare · '+eur(daVersare)+'</h2><div class="pan">'+
+    G.map(g=>'<div class="deb"><span class="dn">'+g.n+'</span>'+
+      '<span class="trk"><span class="fil" data-w="'+Math.round((S.debiti[g.n]||0)/max*100)+
+      '" style="background:'+g.h+'"></span></span>'+
+      '<span class="di">'+eur(S.debiti[g.n]||0)+'</span>'+
+      '<button class="mini" data-versa="'+g.n+'" aria-label="Versato">✓</button></div>').join('')+
+    '<p class="p" style="margin:10px 0 0;font-size:11.5px;color:#7B9188">La spunta sposta la quota di quella persona '+
+    'dentro la cassa comune.</p></div></div>'+
+    '<div class="sez"><h2>Conti fra di voi</h2><div class="pan">'+
+    (S.pendenze.length?S.pendenze.map(p=>'<div class="riga">'+
+      '<span class="pall" style="background:'+COL(p.da)+'"></span>'+
+      '<span class="rt"><b>'+p.da+' deve '+eur(p.val)+' a '+p.a+'</b><span>'+p.cosa+'</span></span>'+
+      '<button class="mini" data-saldo="'+p.id+'">✓</button></div>').join('')
+     :'<div class="vuoto">Nessun furto in sospeso. Chi ruba una missione viene pagato a mano, '+
+      'metà quota, fuori dalla cassa.</div>')+'</div></div>'+
+    '<div class="sez"><h2>Movimenti</h2><div class="pan">'+
+    (mov.length?mov.map(m=>'<div class="riga"><span class="rt"><b>'+m.causale+'</b><span>'+
+      new Date(m.ts).toLocaleDateString('it-IT')+' · '+m.chi+'</span></span>'+
+      '<span class="mono" style="color:'+(m.val>0?'#7ED0B4':'#F0A99C')+'">'+
+      (m.val>0?'+':'')+eur(m.val)+'</span></div>').join('')
+     :'<div class="vuoto">Cassa ancora ferma.</div>')+'</div></div>'+
+    '<div class="sez"><h2>Settimane passate</h2><div class="pan">'+
+    (S.storico.length?S.storico.map(h=>'<div class="riga"><span class="rt"><b>Settimana #'+h.w+
+      '</b><span>'+new Date(h.q).toLocaleDateString('it-IT')+'</span></span>'+
+      '<span class="mono" style="color:'+(h.inc?'#F0A99C':'#7ED0B4')+'">'+
+      (h.inc?'+'+eur(h.inc):'pulita')+'</span></div>').join('')
+     :'<div class="vuoto">La prima settimana è appena cominciata.</div>')+'</div></div>';
+}
+
+/* ---- regole ---- */
+function vRegole(){
+  const R=[
+   'Tre missioni a testa ogni settimana: una facile, una media, una difficile. Le gira la ruota, non si scelgono.',
+   'I lavori di tutti i giorni sono fuori dalla ruota. Tavola e piatti si spezzano in due blocchi, '+
+   'lunedì-giovedì e venerdì-domenica: quattro blocchi, quattro persone, uno a testa, e la settimana è coperta tutta.',
+   'Servizio saltato: '+eur(QUOTA.servizio)+' a sera, addebitati la mattina dopo alle 10:00. '+
+   'Chi copre la sera di un altro incassa metà quota da lui.',
+   'Ogni missione ha la stessa probabilità di capitare a chiunque, salvo quelle ristrette. '+
+   'Nella sezione Probabilità si può pesare un gruppo intero o la singola missione: il giardino parte con il 30% a papà.',
+   'Le percentuali sono un peso sull\'estrazione, non una garanzia: ogni livello assegna quattro missioni '+
+   'diverse a quattro persone diverse, quindi resta un incastro.',
+   'Scambio: proponi la tua missione o il tuo blocco di servizio in cambio di quello di un altro. '+
+   'Vale solo se l\'altro accetta, e la proposta scade dopo '+SCAMBIO_ORE+' ore.',
+   'Le percentuali sono il pilota automatico, lo scambio è il volante: la ruota decide, voi correggete.',
+   'La camera personale resta fuori. L\'armadio condiviso Samuel–Thomas entra nel gioco, a ripiani e cassetti, e capita solo a loro due.',
+   'Prima settimana: le medie sono incatenate. Prime due: le difficili. Servono a prendere le misure e non si pagano.',
+   'Ogni quarta settimana la difficile diventa mensile: quota doppia, '+eur(QUOTA.mensile)+'.',
+   'Umido e indifferenziata ogni settimana, plastica e carta a settimane alterne. I turni ruotano da soli fra tutti e quattro.',
+   'Bidone dimenticato: '+eur(QUOTA.spazzatura)+' in cassa comune, addebitati in automatico dopo le 07:00.',
+   'Sotto le 24 ore dalla scadenza la missione diventa rubabile. Chi la ruba e la porta a casa incassa metà quota: '+
+   'la paga l\'ex proprietario, a mano, e in cassa comune non entra niente.',
+   'Missione flash: una richiesta secca a un\'altra persona, '+FLASH_ORE+' ore di tempo, una a settimana a testa.',
+   'Flash scaduta: '+eur(FLASH_MANCATA)+' a chi non l\'ha fatta e '+eur(FLASH_LANCIO)+
+   ' a chi l\'ha lanciata, entrambi in cassa comune. Poi torna al prossimo giro di ruota: '+
+   '30% a chi l\'ha lanciata, 50% a chi l\'aveva ricevuta, 20% agli altri due.',
+   'Missione non fatta e non rubata: quota piena in cassa comune, e torna nel sacchetto con il marchio Arretrato.',
+   'La cassa comune è un tesoretto, non una multa: si spende per la casa, tutti insieme.',
+   'La lista della spesa è fuori dal gioco: nessun sorteggio, nessuna quota. Chi passa dal negozio spunta.',
+   'Una voce della lista può diventare l\'obiettivo del tesoretto: si segna quanto costa e la barra '+
+   'si riempie mano a mano che la cassa cresce.'
+  ];
+  return '<div class="sez"><div class="pan" style="padding:6px 14px">'+
+    R.map((r,i)=>'<div class="reg"><span class="n">'+pad(i+1)+'</span><span>'+r+'</span></div>').join('')+
+    '</div></div>'+
+    '<div class="sez"><h2>Quote</h2><div class="pan">'+
+    ['facile','media','difficile','mensile','spazzatura'].map(k=>
+      '<div class="riga"><span class="rt"><b>'+LAB[k]+'</b><span>rubata: '+eur(QUOTA[k]/2)+' a mano</span></span>'+
+      '<span class="mono" style="color:var(--gold)">'+eur(QUOTA[k])+'</span></div>').join('')+
+    '<div class="riga"><span class="rt"><b>Flash scaduta</b><span>'+eur(FLASH_LANCIO)+
+    ' a chi la lancia · non rubabile</span></span>'+
+    '<span class="mono" style="color:var(--gold)">'+eur(FLASH_MANCATA)+'</span></div>'+
+    '</div></div>'+
+    '<div class="sez"><h2>Sincronizza</h2><div class="pan">'+
+    '<p class="p">Se ognuno gioca dal proprio telefono, passatevi il codice per allineare la partita.</p>'+
+    '<button class="btn-g" id="bExp" style="margin:0 0 8px">Copia il codice della partita</button>'+
+    '<button class="btn-g" id="bImp" style="margin:0">Incolla un codice ricevuto</button></div></div>'+
+    '<div class="sez"><h2>Partenza</h2><div class="pan">'+
+    '<p class="p">Il progetto parte lunedì 31 agosto: quel giorno il tabellone si azzera da solo e comincia '+
+    'la Settimana 1. Da qui puoi azzerare a mano quando vuoi.</p>'+
+    '<button class="btn-o" id="bReset">Azzera la partita</button></div></div>';
+}
+
+/* ==================== AZIONI ==================== */
+async function toggleSpazz(k){
+  const t=turnoK(k); if(!t) return;
+  if(t.fatta){
+    delete S.spazz[k];
+    S.pendenze=S.pendenze.filter(p=>p.rif!==k);
+    S.log=S.log.filter(l=>l.rif!==k||l.tipo==='saltata');
+  }else{
+    const suo=t.chi===io;
+    if(!suo&&!confirm('Il bidone è di '+t.chi+'. Se lo porti fuori tu, '+t.chi+' ti deve '+
+      eur(QUOTA.spazzatura/2)+'. Procedo?')) return;
+    S.spazz[k]={fatta:true,chi:io,da:suo?null:t.chi,ts:Date.now()};
+    if(!suo) S.pendenze.push({id:'p'+Date.now(),da:t.chi,a:io,val:QUOTA.spazzatura/2,
+      cosa:'Bidone '+t.tp.nome.toLowerCase(),rif:k,ts:Date.now()});
+    log(suo?'fatta':'rubata',io,'Bidone '+t.tp.nome.toLowerCase()+(suo?' fuori':' rubato a '+t.chi),0,t.giorno,k);
+    toast(suo?'Bidone fuori. Zero euro in cassa.':'Rubato. '+t.chi+' ti deve '+eur(QUOTA.spazzatura/2)+'.');
+  }
+  await salva();
+}
+
+async function toggleServ(k){
+  const t=servizioK(k); if(!t) return;
+  if(t.fatta){
+    delete S.serv[k];
+    S.pendenze=S.pendenze.filter(p=>p.rif!==k);
+    S.log=S.log.filter(l=>l.rif!==k||l.tipo==='saltata');
+  }else{
+    const suo=t.chi===io;
+    if(!suo&&!confirm(t.sv.nome+' è di '+t.chi+' quella sera. Se lo fai tu, '+t.chi+
+      ' ti deve '+eur(QUOTA.servizio/2)+'. Procedo?')) return;
+    S.serv[k]={fatta:true,chi:io,da:suo?null:t.chi,ts:Date.now()};
+    if(!suo) S.pendenze.push({id:'p'+Date.now(),da:t.chi,a:io,val:QUOTA.servizio/2,
+      cosa:t.sv.nome,rif:k,ts:Date.now()});
+    log(suo?'fatta':'rubata',io,t.sv.nome+(suo?'':' al posto di '+t.chi),0,t.giorno,k);
+  }
+  await salva();
+}
+
+function attacca(){
+  attaccaRoulette();
+  /* --- servizi --- */
+  document.querySelectorAll('#vista [data-sv]').forEach(el=>{
+    el.onclick=async()=>{
+      const r=el.getBoundingClientRect();
+      const era=el.classList.contains('on');
+      await toggleServ(el.dataset.sv);
+      if(!era) coriandoli(r.left+r.width/2,r.top+10,14);
+      disegna();
+    };
+  });
+  /* --- scambi --- */
+  document.querySelectorAll('#vista [data-scm]').forEach(el=>{
+    el.onclick=()=>apriScambio('missione',el.dataset.scm);
+  });
+  document.querySelectorAll('#vista [data-scsv]').forEach(el=>{
+    el.onclick=()=>apriScambio('servizio',el.dataset.scsv);
+  });
+  document.querySelectorAll('#vista [data-scok]').forEach(el=>{
+    el.onclick=async()=>{
+      const x=S.scambi.find(y=>y.id===el.dataset.scok); if(!x||x.stato!=='aperto') return;
+      if(!applicaScambio(x)){ x.stato='decaduto'; await salva(); disegna();
+        toast('Non si può più: qualcosa è cambiato.'); return; }
+      x.stato='accettato';
+      const d=descriviScambio(x);
+      log('scambio',io,'Scambio accettato con '+x.da,0);
+      const r=el.getBoundingClientRect(); coriandoli(r.left+r.width/2,r.top,20);
+      await salva(); avvisa(x.da,'Scambio accettato',io+' ha accettato lo scambio.');
+      disegna(); toast('Fatto. Ora è tua: '+d.mio+'.');
+    };
+  });
+  document.querySelectorAll('#vista [data-scno]').forEach(el=>{
+    el.onclick=async()=>{
+      const x=S.scambi.find(y=>y.id===el.dataset.scno); if(!x) return;
+      x.stato='rifiutato';
+      await salva(); avvisa(x.da,'Scambio rifiutato',io+' ha detto no allo scambio.');
+      disegna(); toast('Proposta rifiutata.');
+    };
+  });
+  document.querySelectorAll('#vista [data-scdel]').forEach(el=>{
+    el.onclick=async()=>{
+      const x=S.scambi.find(y=>y.id===el.dataset.scdel); if(!x) return;
+      x.stato='ritirato'; await salva(); disegna(); toast('Proposta ritirata.');
+    };
+  });
+  /* --- probabilità --- */
+  document.querySelectorAll('#vista [data-pa]').forEach(el=>{
+    el.onclick=()=>{
+      const c=PIDX[+el.dataset.pa]; if(!c) return;
+      if(c.apri!==undefined){ pApri=pApri===c.apri?null:c.apri; pMiss=null; }
+      else { pMiss=pMiss===c.apriM?null:c.apriM; }
+      disegna();
+    };
+  });
+  document.querySelectorAll('#vista [data-pm]').forEach(el=>{
+    el.onclick=async()=>{
+      const c=PIDX[+el.dataset.pm]; if(!c) return;
+      spostaPeso(c.key,c.m,c.chi,c.d);
+      await salva(); disegna();
+    };
+  });
+  document.querySelectorAll('#vista [data-pr]').forEach(el=>{
+    el.onclick=async()=>{
+      const c=PIDX[+el.dataset.pr]; if(!c) return;
+      delete S.pesi[c.key];
+      await salva(); disegna(); toast('Tornata equa.');
+    };
+  });
+  document.querySelectorAll('#vista [data-chk]').forEach(el=>{
+    el.onclick=async()=>{
+      const m=S.missioni.find(x=>x.id===el.dataset.chk); if(!m) return;
+      if(bloccato(m.liv,S.settimana)) return;
+      m.fatta=!m.fatta;
+      if(m.fatta){
+        const r=el.getBoundingClientRect(); coriandoli(r.left+15,r.top+15);
+        log(m.ruba?'rubata':'fatta',io,m.t,0,null,m.id);
+        if(m.ruba&&m.exchi&&m.exchi!==m.ruba){
+          S.pendenze.push({id:'p'+Date.now(),da:m.exchi,a:m.ruba,val:quotaDi(m)/2,
+            cosa:m.t,rif:m.id,ts:Date.now()});
+          toast('Colpo riuscito. '+m.exchi+' ti deve '+eur(quotaDi(m)/2)+'.');
+        }else toast('Missione completata.');
+      }else{
+        S.pendenze=S.pendenze.filter(p=>p.rif!==m.id);
+        S.log=S.log.filter(l=>l.rif!==m.id||l.tipo==='saltata');
+      }
+      await salva(); disegna();
+    };
+  });
+  document.querySelectorAll('#vista [data-fchk]').forEach(el=>{
+    el.onclick=async()=>{
+      const f=S.flash.find(x=>x.id===el.dataset.fchk); if(!f||f.chiuso) return;
+      if(f.a!==io){ toast('È la flash di '+f.a+'. Lascia fare a lei o lui.'); return; }
+      f.fatta=!f.fatta;
+      if(f.fatta){
+        f.fine=Date.now();
+        const r=el.getBoundingClientRect(); coriandoli(r.left+15,r.top+15,26);
+        log('fatta',io,'Flash conclusa: '+f.t,0,null,f.id);
+        toast('Flash chiusa in tempo. Zero euro.');
+      }else S.log=S.log.filter(l=>l.rif!==f.id||l.tipo==='saltata');
+      await salva(); disegna();
+    };
+  });
+  document.querySelectorAll('#vista [data-fdel]').forEach(el=>{
+    el.onclick=async()=>{
+      const f=S.flash.find(x=>x.id===el.dataset.fdel); if(!f) return;
+      if(f.da!==io){ toast('Può ritirarla solo chi l\'ha lanciata.'); return; }
+      if(!confirm('Ritiri la flash? Il tuo lancio della settimana resta usato.')) return;
+      f.chiuso=true; f.ritirata=true;
+      log('flash',io,'Flash ritirata: '+f.t,0,null,f.id);
+      await salva(); disegna(); toast('Flash ritirata.');
+    };
+  });
+  document.querySelectorAll('#vista [data-fa]').forEach(el=>{
+    el.onclick=()=>{ flashA=el.dataset.fa; disegna(); };
+  });
+  const bf=document.getElementById('bFlash');
+  if(bf) bf.onclick=async()=>{
+    if(flashUsata()){ toast('Hai già lanciato la tua flash di questa settimana.'); return; }
+    const t=document.getElementById('flT').value.trim();
+    const n=document.getElementById('flN').value.trim();
+    if(!t){ toast('Scrivi cosa serve.'); return; }
+    if(!flashA||flashA===io){ toast('Scegli a chi la mandi.'); return; }
+    S.flash.push({id:'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+      t,n,da:io,a:flashA,ts:Date.now(),scad:Date.now()+FLASH_ORE*36e5,
+      fatta:false,chiuso:false,w:S.settimana,ritorni:0,tornata:false});
+    log('flash',flashA,'Flash da '+io+': '+t,0);
+    await salva(); avvisa(flashA,'Missione flash',io+' ti ha lanciato: '+t);
+    disegna();
+    toast('Flash lanciata a '+flashA+'. '+FLASH_ORE+' ore di tempo.');
+  };
+  document.querySelectorAll('#vista [data-lock]').forEach(el=>{
+    el.onclick=()=>{ const c=el.closest('.mcard'); c.classList.remove('shake');
+      void c.offsetWidth; c.classList.add('shake');
+      toast('Ancora incatenata. Serve tempo per prenderci la mano.'); };
+  });
+  document.querySelectorAll('#vista [data-ruba]').forEach(el=>{
+    el.onclick=async()=>{
+      const m=S.missioni.find(x=>x.id===el.dataset.ruba); if(!m) return;
+      if(!rubabile(m)){ toast('Troppo tardi, la finestra è chiusa.'); return; }
+      m.exchi=m.chi; m.ruba=io; m.chi=io;
+      const r=el.getBoundingClientRect(); coriandoli(r.left+20,r.top+10);
+      toast('Rubata. Falla e incassi '+eur(quotaDi(m)/2)+' da '+m.exchi+'.');
+      await salva(); disegna();
+    };
+  });
+  document.querySelectorAll('#vista [data-sp]').forEach(el=>{
+    el.onclick=async()=>{ await toggleSpazz(el.dataset.sp); disegna(); };
+  });
+  const bc=document.getElementById('bChiudi');
+  if(bc) bc.onclick=async()=>{
+    const n=S.missioni.filter(m=>!m.fatta&&!bloccato(m.liv,S.settimana)).length;
+    if(!confirm(n?n+' missioni non fatte vanno in cassa e tornano nel sacchetto. Procedo?'
+      :'Settimana pulita, niente in cassa. Rigiro la ruota?')) return;
+    const inc=chiudi(); await salva(); vista='missioni'; disegna();
+    toast(inc?'Settimana chiusa. '+eur(inc)+' in cassa comune.':'Settimana perfetta. Cassa ferma.');
+  };
+  document.querySelectorAll('#vista [data-mese]').forEach(el=>{
+    el.onclick=()=>{ calMese=new Date(calMese.getFullYear(),calMese.getMonth()+ +el.dataset.mese,1); disegna(); };
+  });
+  document.querySelectorAll('#vista [data-day]').forEach(el=>{
+    el.onclick=()=>apriGiorno(el.dataset.day);
+  });
+  document.querySelectorAll('#vista [data-delev]').forEach(el=>{
+    el.onclick=async()=>{ S.eventi=S.eventi.filter(e=>e.id!==el.dataset.delev); await salva(); disegna(); };
+  });
+  document.querySelectorAll('#vista [data-rit]').forEach(el=>{
+    el.onclick=async()=>{
+      const p=el.dataset.rit.split('|'), k=p[0], n=+p[1];
+      S.ritiri[k]=S.ritiri[k]||[];
+      S.ritiri[k]=S.ritiri[k].includes(n)?S.ritiri[k].filter(x=>x!==n):S.ritiri[k].concat(n);
+      await salva(); disegna();
+    };
+  });
+  document.querySelectorAll('#vista [data-par]').forEach(el=>{
+    el.onclick=async()=>{ const k=el.dataset.par;
+      S.parita[k]=((S.parita[k]||0)+1)%2; await salva(); disegna();
+      toast('Spostato di una settimana.'); };
+  });
+  document.querySelectorAll('#vista [data-versa]').forEach(el=>{
+    el.onclick=async()=>{
+      const n=el.dataset.versa, v=S.debiti[n]||0;
+      if(!v){ toast(n+' non deve niente.'); return; }
+      if(!confirm(n+' versa '+eur(v)+' in cassa comune. Confermo?')) return;
+      S.debiti[n]=0; S.cassa=Math.round((S.cassa+v)*100)/100;
+      S.movimenti.unshift({id:'v'+Date.now(),ts:Date.now(),chi:n,causale:'Versamento quote',val:v});
+      log('versamento',n,'Versamento quote',v);
+      await salva(); disegna(); toast('Versato. Cassa a '+eur(S.cassa)+'.');
+    };
+  });
+  document.querySelectorAll('#vista [data-saldo]').forEach(el=>{
+    el.onclick=async()=>{
+      const p=S.pendenze.find(x=>x.id===el.dataset.saldo); if(!p) return;
+      if(!confirm(p.da+' ha pagato '+eur(p.val)+' a '+p.a+'?')) return;
+      S.pendenze=S.pendenze.filter(x=>x.id!==p.id);
+      await salva(); disegna(); toast('Conto saldato.');
+    };
+  });
+  document.querySelectorAll('#vista [data-lscat]').forEach(el=>{
+    el.onclick=()=>{ catSel=el.dataset.lscat; disegna(); };
+  });
+  const ba=document.getElementById('bAddLs');
+  if(ba) ba.onclick=async()=>{
+    const t=document.getElementById('lsT').value.trim();
+    const n=document.getElementById('lsN').value.trim();
+    if(!t){ toast('Scrivi cosa manca.'); return; }
+    S.spesa.unshift({id:'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+      t,n,cat:catSel,chi:io,ts:Date.now(),presa:false});
+    await salva(); disegna(); toast('Aggiunto alla lista.');
+  };
+  document.querySelectorAll('#vista [data-lspr]').forEach(el=>{
+    el.onclick=async()=>{
+      const i=S.spesa.find(x=>x.id===el.dataset.lspr); if(!i) return;
+      i.presa=!i.presa; i.tsp=i.presa?Date.now():null;
+      if(i.presa){
+        const r=el.getBoundingClientRect(); coriandoli(r.left+13,r.top+13,10);
+        if(S.obiettivo&&S.obiettivo.rif===i.id) toast('Comprato. L\'obiettivo della cassa resta aperto: chiudilo dal Tesoretto.');
+      }
+      await salva(); disegna();
+    };
+  });
+  document.querySelectorAll('#vista [data-lsdel]').forEach(el=>{
+    el.onclick=async()=>{
+      const i=S.spesa.find(x=>x.id===el.dataset.lsdel); if(!i) return;
+      if(S.obiettivo&&S.obiettivo.rif===i.id&&
+        !confirm('"'+i.t+'" è l\'obiettivo della cassa. Lo tolgo da lista e obiettivo?')) return;
+      if(S.obiettivo&&S.obiettivo.rif===i.id) S.obiettivo=null;
+      S.spesa=S.spesa.filter(x=>x.id!==i.id);
+      await salva(); disegna(); toast('Tolto dalla lista.');
+    };
+  });
+  document.querySelectorAll('#vista [data-obj]').forEach(el=>{
+    el.onclick=async()=>{
+      const i=S.spesa.find(x=>x.id===el.dataset.obj); if(!i) return;
+      const v=parseFloat((prompt('Quanto costa "'+i.t+'"? Scrivi solo la cifra in euro.','')||'')
+        .replace(',','.'));
+      if(!(v>0)){ toast('Serve un costo in euro.'); return; }
+      S.obiettivo={rif:i.id,t:i.t,costo:Math.round(v*100)/100,chi:io,ts:Date.now()};
+      await salva(); disegna(); toast('Obiettivo fissato: '+i.t+' · '+eur(S.obiettivo.costo)+'.');
+    };
+  });
+  const bok=document.getElementById('bObjOk');
+  if(bok) bok.onclick=async()=>{
+    const ob=S.obiettivo; if(!ob) return;
+    if(ob.costo>S.cassa&&!confirm('In cassa ci sono '+eur(S.cassa)+' su '+eur(ob.costo)+
+      '. Segno lo stesso la spesa?')) return;
+    if(ob.costo<=S.cassa&&!confirm('Escono '+eur(ob.costo)+' dalla cassa per '+ob.t+'. Confermo?')) return;
+    S.cassa=Math.round((S.cassa-ob.costo)*100)/100;
+    S.movimenti.unshift({id:'o'+Date.now(),ts:Date.now(),chi:io,causale:ob.t,val:-ob.costo});
+    log('spesa',io,ob.t,ob.costo);
+    const it=S.spesa.find(x=>x.id===ob.rif); if(it){ it.presa=true; it.tsp=Date.now(); }
+    S.obiettivo=null;
+    const r=bok.getBoundingClientRect(); coriandoli(r.left+30,r.top+10,30);
+    await salva(); disegna(); toast('Comprato. In cassa restano '+eur(S.cassa)+'.');
+  };
+  const bno=document.getElementById('bObjNo');
+  if(bno) bno.onclick=async()=>{
+    if(!confirm('Tolgo l\'obiettivo? La voce resta nella lista della spesa.')) return;
+    S.obiettivo=null; await salva(); disegna(); toast('Obiettivo tolto.');
+  };
+  const bs=document.getElementById('bSpesa');
+  if(bs) bs.onclick=async()=>{
+    const c=document.getElementById('spC').value.trim();
+    const v=parseFloat((document.getElementById('spV').value||'').replace(',','.'));
+    if(!c||!(v>0)){ toast('Serve una causale e un importo.'); return; }
+    if(v>S.cassa&&!confirm('In cassa ci sono '+eur(S.cassa)+'. Segno lo stesso?')) return;
+    S.cassa=Math.round((S.cassa-v)*100)/100;
+    S.movimenti.unshift({id:'s'+Date.now(),ts:Date.now(),chi:io,causale:c,val:-v});
+    log('spesa',io,c,v);
+    await salva(); disegna(); toast('Spesa segnata. Restano '+eur(S.cassa)+'.');
+  };
+  const cf=document.getElementById('cifra');
+  if(cf){
+    const tot=S.cassa; let s=null;
+    const step=t=>{ if(!s)s=t; const p=Math.min(1,(t-s)/900);
+      cf.textContent='€ '+(Math.round(tot*(1-Math.pow(1-p,3))*100)/100).toString().replace('.',',');
+      if(p<1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+    setTimeout(()=>document.querySelectorAll('.fil').forEach(f=>f.style.width=f.dataset.w+'%'),60);
+  }
+  const be=document.getElementById('bExp');
+  if(be) be.onclick=async()=>{
+    const code=btoa(unescape(encodeURIComponent(JSON.stringify(S))));
+    try{ await navigator.clipboard.writeText(code); toast('Codice copiato. Mandalo in chat di famiglia.'); }
+    catch(e){ prompt('Copia questo codice:',code); }
+  };
+  const bi=document.getElementById('bImp');
+  if(bi) bi.onclick=async()=>{
+    const c=prompt('Incolla il codice ricevuto:'); if(!c) return;
+    try{ S=JSON.parse(decodeURIComponent(escape(atob(c.trim())))); await salva(); disegna();
+      toast('Partita allineata.'); }catch(e){ toast('Codice non valido, controlla di averlo copiato tutto.'); }
+  };
+  const br=document.getElementById('bReset');
+  if(br) br.onclick=async()=>{
+    if(!confirm('Azzero tutto: missioni, flash, cassa, diario, debiti. La lista della spesa resta. '+
+      'Non si torna indietro.')) return;
+    const rit=S.ritiri, par=S.parita, lis=S.spesa;
+    S=vuoto(); S.ritiri=rit; S.parita=par; S.spesa=lis||[];
+    S.settimana=1; S.inizio=lunedi(Date.now()); S.avviata=Date.now()>=INIZIO_S1;
+    await salva(); vista='missioni'; disegna(); toast('Partita azzerata.');
+  };
+}
+
+function attaccaRoulette(){
+  const b=document.getElementById('bSpin'); if(!b) return;
+  b.onclick=async()=>{
+    if(girando) return; girando=true;
+    b.disabled=true; b.textContent='La ruota gira…';
+    const ruota=document.querySelector('.ruota'); ruota.classList.add('gira');
+    if(!S.estratto){ estrai(); await salva(); }
+    const ordine={facile:0,media:1,difficile:2,mensile:2};
+    const mie=S.missioni.filter(m=>m.chi===io).sort((a,c)=>ordine[a.liv]-ordine[c.liv]);
+    const slots=[].slice.call(document.querySelectorAll('.slot'));
+    const pool=[].concat(SACCO.facile,SACCO.media,SACCO.difficile,SACCO.mensile).map(x=>x.t);
+    const iv=slots.map(s=>{ s.classList.add('gira');
+      return setInterval(()=>{ s.querySelector('.s2').textContent=pool[Math.floor(Math.random()*pool.length)]; },70); });
+    slots.forEach((s,i)=>setTimeout(()=>{
+      clearInterval(iv[i]); s.classList.remove('gira'); s.classList.add('fermo');
+      s.querySelector('.s2').textContent=mie[i]?mie[i].t:'—';
+      const r=s.getBoundingClientRect(); coriandoli(r.left+r.width/2,r.top+22,14);
+      if(navigator.vibrate) navigator.vibrate(25);
+    },1100+i*720));
+    setTimeout(async()=>{
+      ruota.classList.remove('gira');
+      const r=ruota.getBoundingClientRect(); coriandoli(r.left+r.width/2,r.top+r.height/2,34);
+      S.rivelato[io]=true; await salva(); girando=false; disegna();
+      toast('La sorte ha parlato. In bocca al lupo.');
+    },1100+slots.length*720+1000);
+  };
+}
+
+/* ==================== SYNC E NOTIFICHE ==================== */
+/* ------------------------------------------------------------------
+   Compila queste tre righe con i dati del tuo progetto Supabase.
+   Se le lasci vuote l'app funziona lo stesso, ma solo su questo telefono.
+   ------------------------------------------------------------------ */
+const SUPA={
+  url  : '',            /* es. https://abcdefgh.supabase.co        */
+  anon : '',            /* chiave "anon public"                    */
+  vapid: '',            /* chiave VAPID pubblica, per le notifiche */
+  casa : 'casa-mia'     /* stesso codice su tutti e quattro i telefoni */
+};
+const ATTIVO=()=>!!(SUPA.url&&SUPA.anon);
+let sb=null, online=false, spinta=null;
+
+function segnale(t,ko){
+  const e=document.getElementById('sync'); if(!e) return;
+  e.querySelector('span').textContent=t;
+  e.classList.toggle('ko',!!ko);
+  e.classList.add('on');
+  clearTimeout(e._t); e._t=setTimeout(()=>e.classList.remove('on'),2400);
+}
+/* prende lo stato remoto se è più recente del nostro */
+function adotta(d,v){
+  if(!d||v<=(S.v||0)) return;
+  const apertoSheet=document.getElementById('sheet').classList.contains('on');
+  S=d; S.v=v;
+  const base=vuoto(); Object.keys(base).forEach(k=>{ if(S[k]==null) S[k]=base[k]; });
+  try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){}
+  const prima=JSON.stringify(S);
+  rollover(); chiudiSpazzatura(); chiudiServizi(); chiudiFlash(); chiudiScambi();
+  if(JSON.stringify(S)!==prima){ S.v++; spingi(); }
+  if(io&&!apertoSheet) disegna();
+}
+async function spingi(){
+  if(!sb) return;
+  clearTimeout(spinta);
+  spinta=setTimeout(async()=>{
+    try{
+      await sb.from('stato').upsert({casa:SUPA.casa,dati:S,v:S.v,agg:new Date().toISOString()});
+      online=true;
+    }catch(e){ online=false; segnale('offline · salvato qui',true); }
+  },220);
+}
+async function avvia_sync(){
+  if(!ATTIVO()) return;
+  try{
+    const m=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+    sb=m.createClient(SUPA.url,SUPA.anon);
+    const {data}=await sb.from('stato').select('dati,v').eq('casa',SUPA.casa).maybeSingle();
+    if(data&&data.v>(S.v||0)) adotta(data.dati,data.v); else await spingi();
+    sb.channel('casa-'+SUPA.casa)
+      .on('postgres_changes',
+        {event:'*',schema:'public',table:'stato',filter:'casa=eq.'+SUPA.casa},
+        p=>{ if(p.new&&p.new.v>(S.v||0)){ adotta(p.new.dati,p.new.v); segnale('aggiornato'); } })
+      .subscribe(st=>{
+        online=(st==='SUBSCRIBED');
+        segnale(online?'in linea':'offline · salvato qui',!online);
+      });
+    document.addEventListener('visibilitychange',async()=>{
+      if(document.visibilityState!=='visible'||!sb) return;
+      const {data:d2}=await sb.from('stato').select('dati,v').eq('casa',SUPA.casa).maybeSingle();
+      if(d2) adotta(d2.dati,d2.v);
+    });
+  }catch(e){ segnale('offline · salvato qui',true); }
+}
+
+/* ---- notifiche push ---- */
+function b64u8(b){
+  const p='='.repeat((4-b.length%4)%4);
+  const t=(b+p).replace(/-/g,'+').replace(/_/g,'/'), r=atob(t), a=new Uint8Array(r.length);
+  for(let i=0;i<r.length;i++) a[i]=r.charCodeAt(i);
+  return a;
+}
+const pushPronte=()=>'serviceWorker' in navigator&&'PushManager' in window&&SUPA.vapid&&sb;
+async function attivaPush(){
+  if(!pushPronte()){ toast('Su questo telefono le notifiche non sono disponibili.'); return; }
+  if(!io){ toast('Prima scegli chi sei.'); return; }
+  try{
+    const reg=await navigator.serviceWorker.register('sw.js');
+    await navigator.serviceWorker.ready;
+    if(await Notification.requestPermission()!=='granted'){
+      toast('Permesso negato. Si riattiva dalle impostazioni del telefono.'); return; }
+    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,
+      applicationServerKey:b64u8(SUPA.vapid)});
+    await sb.from('push').upsert({casa:SUPA.casa,chi:io,sub:sub.toJSON()},{onConflict:'casa,chi'});
+    try{ localStorage.setItem('casa-push',io); }catch(e){}
+    toast('Notifiche attive per '+io+' su questo telefono.');
+  }catch(e){ toast('Non sono riuscito ad attivarle. Aggiungi prima l\'app alla schermata home.'); }
+}
+async function avvisa(chi,titolo,testo){
+  if(!sb||!chi||chi===io) return;
+  try{ await sb.functions.invoke('notifica',{body:{casa:SUPA.casa,a:chi,titolo,testo}}); }catch(e){}
+}
+
+/* ==================== AVVIO ==================== */
+(async()=>{
+  await carica(); await salva();
+  avvia_sync();
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+  setInterval(async()=>{
+    const a=avvioUfficiale(), b=rollover(), c=chiudiSpazzatura(),
+          d=chiudiFlash(), e=chiudiServizi();
+    chiudiScambi();
+    if(a||b||c||d||e){ await salva(); if(io) disegna(); if(a) toast('Si parte. Settimana 1.'); }
+  },60000);
+})();
+</script>
+</body>
+</html>
