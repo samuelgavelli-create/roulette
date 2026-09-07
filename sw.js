@@ -1,6 +1,6 @@
 /* Roulette di Casa - service worker
    Due compiti: tenere l'app apribile anche senza rete e ricevere le notifiche. */
-const CACHE = 'roulette-v3';
+const CACHE = 'roulette-v5';
 const SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -32,25 +32,35 @@ self.addEventListener('fetch', e => {
   );
 });
 
+/* Ogni avviso ha il suo tag: due notifiche diverse non si mangiano a vicenda.
+   Il campo "vista" dice su quale schermata aprire l'app quando la tocchi. */
 self.addEventListener('push', e => {
   let d = { titolo: 'Roulette di Casa', testo: 'Qualcosa si muove in casa.' };
   try { if (e.data) d = Object.assign(d, e.data.json()); } catch (_) {}
+  const vista = d.vista || 'missioni';
   e.waitUntil(self.registration.showNotification(d.titolo, {
     body: d.testo,
     icon: './icon-192.png',
     badge: './icon-192.png',
-    tag: d.tag || 'casa',
+    tag: d.tag || ('casa-' + Date.now()),
     renotify: true,
-    data: { url: './' }
+    vibrate: d.urgente ? [60, 40, 60, 40, 120] : [40, 30, 40],
+    data: { url: './?v=' + encodeURIComponent(vista) }
   }));
 });
 
 self.addEventListener('notificationclick', e => {
   e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || './';
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(l => {
-      for (const c of l) if ('focus' in c) return c.focus();
-      return self.clients.openWindow('./');
+      for (const c of l) {
+        if ('focus' in c) {
+          if ('navigate' in c) { try { c.navigate(url); } catch (_) {} }
+          return c.focus();
+        }
+      }
+      return self.clients.openWindow(url);
     })
   );
 });
