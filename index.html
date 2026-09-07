@@ -992,6 +992,7 @@ const ICONE={
  servizi:'<path d="M4 5h16v4H4zM4 13h16v6H4z"/><path d="M8 9v4M16 9v4"/>',
  probabilita:'<path d="M4 19V9M10 19V5M16 19v-7M22 19h-20"/>',
  regole:'<circle cx="12" cy="12" r="9"/><path d="M12 8v.01M11 12h1v5h1"/>',
+ notifiche:'<path d="M6 9a6 6 0 0112 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 20h4"/>',
  esci:'<path d="M15 4h3a2 2 0 012 2v12a2 2 0 01-2 2h-3M10 16l-4-4 4-4M6 12h12"/>'
 };
 
@@ -1031,17 +1032,18 @@ function apriProfili(){
       '<span class="pall" style="background:'+g.h+'"></span>'+
       '<span class="rt"><b>'+g.n+'</b><span>'+g.r+'</span></span>'+
       '<span class="spunta">'+(g.n===io?'✓':'')+'</span></div>').join('')+'</div>'+
-    (pushPronte()?'<button class="btn-o" id="shPush" style="margin-top:12px">'+
-      'Attiva le notifiche su questo telefono</button>':'')+
+    '<button class="btn-o" id="shPush" style="margin-top:12px">Notifiche di questo dispositivo</button>'+
     '<button class="btn-g" id="shClose" style="margin-top:8px">Chiudi</button>';
   document.getElementById('sheet').classList.add('on');
   document.getElementById('shClose').onclick=chiudiSheet;
-  const bp=document.getElementById('shPush'); if(bp) bp.onclick=attivaPush;
+  const bp=document.getElementById('shPush');
+  if(bp) bp.onclick=()=>{ chiudiSheet(); vista='notifiche'; disegna(); aggiornaPush(true); };
   document.querySelectorAll('#sheetIn [data-sw]').forEach(el=>{
     el.onclick=()=>{
       if(el.dataset.sw===io){ chiudiSheet(); return; }
       io=el.dataset.sw;
       try{ localStorage.setItem('casa-io',io); }catch(e){}
+      ricollegaPush();
       chiudiSheet(); vista='missioni'; disegna(); toast('Ora sei '+io+'.');
     };
   });
@@ -1050,7 +1052,7 @@ function apriProfili(){
 const VOCI=[['missioni','Le mie missioni'],['servizi','Servizi di casa'],['flash','Missioni flash'],
   ['lista','Lista della spesa'],['calendario','Calendario'],['spazzatura','Spazzatura'],
   ['tesoretto','Tesoretto'],['probabilita','Probabilità'],
-  ['regole','Regolamento'],['esci','Cambia profilo']];
+  ['notifiche','Notifiche'],['regole','Regolamento'],['esci','Cambia profilo']];
 function menu(){
   const rub=S.missioni.filter(m=>m.chi!==io&&rubabile(m)).length;
   const fl=flashMie().length;
@@ -1064,13 +1066,16 @@ function menu(){
     if(v[0]==='lista'&&ls) bd='<span class="bd">'+ls+' in lista</span>';
     if(v[0]==='servizi'&&sv) bd='<span class="bd">'+sv+' turni tuoi</span>';
     if(v[0]==='missioni'&&sc) bd='<span class="bd rosso">'+sc+' scambi</span>';
+    if(v[0]==='notifiche'&&PUSH.caricato&&!(PUSH.iscritto&&PUSH.chi===io))
+      bd='<span class="bd rosso">da attivare</span>';
     return '<div class="mi '+(vista===v[0]?'att':'')+'" data-v="'+v[0]+'">'+
       '<svg viewBox="0 0 24 24">'+ICONE[v[0]]+'</svg>'+v[1]+bd+'</div>';
   }).join('');
   document.querySelectorAll('[data-v]').forEach(el=>{
     el.onclick=()=>{ const v=el.dataset.v; chiudiMenu();
       if(v==='esci'){ apriProfili(); return; }
-      vista=v; disegna(); };
+      vista=v; disegna();
+      if(v==='notifiche') aggiornaPush(true); };
   });
   const b=document.getElementById('tbBtn');
   b.querySelectorAll('.dot').forEach(d=>d.remove());
@@ -1093,7 +1098,8 @@ function disegna(){
   document.getElementById('tbNome').textContent=g.n;
   menu();
   const f={missioni:vMissioni,servizi:vServizi,flash:vFlash,lista:vLista,calendario:vCalendario,
-    spazzatura:vSpazzatura,tesoretto:vTesoretto,probabilita:vProbabilita,regole:vRegole}[vista]||vMissioni;
+    spazzatura:vSpazzatura,tesoretto:vTesoretto,probabilita:vProbabilita,
+    notifiche:vNotifiche,regole:vRegole}[vista]||vMissioni;
   document.getElementById('vista').innerHTML='<div class="view">'+banner()+f()+'</div>';
   attacca(); aggiornaTimer();
   clearInterval(tick); tick=setInterval(aggiornaTimer,1000);
@@ -1326,7 +1332,7 @@ function apriScambio(tipo,rif){
       S.scambi.push({id:'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
         tipo,da:io,a,mio:rif,suo,ts:Date.now(),scad:Date.now()+SCAMBIO_ORE*36e5,stato:'aperto'});
       log('scambio',a,'Scambio proposto da '+io,0);
-      await salva(); avvisa(a,'Proposta di scambio',io+' ti propone uno scambio.');
+      await salva(); avvisa(a,'Proposta di scambio',io+' ti propone uno scambio.',{tag:'scambio'});
       chiudiSheet(); disegna(); toast('Proposta mandata a '+a+'.');
     };
   });
@@ -1790,6 +1796,10 @@ async function toggleServ(k){
 }
 
 function attacca(){
+  const bOn=document.getElementById('bPushOn');   if(bOn) bOn.onclick=attivaPush;
+  const bOff=document.getElementById('bPushOff'); if(bOff) bOff.onclick=spegniPush;
+  const bTe=document.getElementById('bPushTest'); if(bTe) bTe.onclick=provaPush;
+  const bRi=document.getElementById('bPushRic');  if(bRi) bRi.onclick=()=>aggiornaPush(true);
   attaccaRoulette();
   /* --- servizi --- */
   document.querySelectorAll('#vista [data-sv]').forEach(el=>{
@@ -1817,7 +1827,7 @@ function attacca(){
       const d=descriviScambio(x);
       log('scambio',io,'Scambio accettato con '+x.da,0);
       const r=el.getBoundingClientRect(); coriandoli(r.left+r.width/2,r.top,20);
-      await salva(); avvisa(x.da,'Scambio accettato',io+' ha accettato lo scambio.');
+      await salva(); avvisa(x.da,'Scambio accettato',io+' ha accettato lo scambio.',{tag:'scambio'});
       disegna(); toast('Fatto. Ora è tua: '+d.mio+'.');
     };
   });
@@ -1825,7 +1835,7 @@ function attacca(){
     el.onclick=async()=>{
       const x=S.scambi.find(y=>y.id===el.dataset.scno); if(!x) return;
       x.stato='rifiutato';
-      await salva(); avvisa(x.da,'Scambio rifiutato',io+' ha detto no allo scambio.');
+      await salva(); avvisa(x.da,'Scambio rifiutato',io+' ha detto no allo scambio.',{tag:'scambio'});
       disegna(); toast('Proposta rifiutata.');
     };
   });
@@ -1887,6 +1897,7 @@ function attacca(){
         f.fine=Date.now();
         const r=el.getBoundingClientRect(); coriandoli(r.left+15,r.top+15,26);
         log('fatta',io,'Flash conclusa: '+f.t,0,null,f.id);
+        avvisa(f.da,'Flash conclusa',io+' ha chiuso «'+f.t+'» in tempo.',{tag:'flash-'+f.id,vista:'flash'});
         toast('Flash chiusa in tempo. Zero euro.');
       }else S.log=S.log.filter(l=>l.rif!==f.id||l.tipo==='saltata');
       await salva(); disegna();
@@ -1899,7 +1910,9 @@ function attacca(){
       if(!confirm('Ritiri la flash? Il tuo lancio della settimana resta usato.')) return;
       f.chiuso=true; f.ritirata=true;
       log('flash',io,'Flash ritirata: '+f.t,0,null,f.id);
-      await salva(); disegna(); toast('Flash ritirata.');
+      await salva();
+      avvisa(f.a,'Flash ritirata',io+' ha tolto «'+f.t+'». Sei libero.',{tag:'flash-'+f.id,vista:'flash'});
+      disegna(); toast('Flash ritirata.');
     };
   });
   document.querySelectorAll('#vista [data-fa]').forEach(el=>{
@@ -1916,7 +1929,9 @@ function attacca(){
       t,n,da:io,a:flashA,ts:Date.now(),scad:Date.now()+FLASH_ORE*36e5,
       fatta:false,chiuso:false,w:S.settimana,ritorni:0,tornata:false});
     log('flash',flashA,'Flash da '+io+': '+t,0);
-    await salva(); avvisa(flashA,'Missione flash',io+' ti ha lanciato: '+t);
+    await salva();
+    avvisa(flashA,'Missione flash',io+' ti ha lanciato «'+t+'». Hai '+FLASH_ORE+' ore.',
+      {tag:'flash-nuova',vista:'flash',urgente:true});
     disegna();
     toast('Flash lanciata a '+flashA+'. '+FLASH_ORE+' ore di tempo.');
   };
@@ -1929,7 +1944,11 @@ function attacca(){
     el.onclick=async()=>{
       const m=S.missioni.find(x=>x.id===el.dataset.ruba); if(!m) return;
       if(!rubabile(m)){ toast('Troppo tardi, la finestra è chiusa.'); return; }
+      const derubato=m.chi;
       m.exchi=m.chi; m.ruba=io; m.chi=io;
+      avvisa(derubato,'Ti hanno rubato la missione',
+        io+' si è preso «'+m.t+'». Se la porta a casa gli devi '+eur(quotaDi(m)/2)+'.',
+        {tag:'ruba-'+m.id,urgente:true});
       const r=el.getBoundingClientRect(); coriandoli(r.left+20,r.top+10);
       toast('Rubata. Falla e incassi '+eur(quotaDi(m)/2)+' da '+m.exchi+'.');
       await salva(); disegna();
@@ -1944,6 +1963,9 @@ function attacca(){
     if(!confirm(n?n+' missioni non fatte vanno in cassa e tornano nel sacchetto. Procedo?'
       :'Settimana pulita, niente in cassa. Rigiro la ruota?')) return;
     const inc=chiudi(); await salva(); vista='missioni'; disegna();
+    avvisaTutti('Settimana chiusa',io+' ha chiuso la settimana'+
+      (inc?': '+eur(inc)+' finiti in cassa. ':'. ')+'La ruota è pronta a girare.',
+      {tag:'settimana'});
     toast(inc?'Settimana chiusa. '+eur(inc)+' in cassa comune.':'Settimana perfetta. Cassa ferma.');
   };
   document.querySelectorAll('#vista [data-mese]').forEach(el=>{
@@ -2193,32 +2215,222 @@ function b64u8(b){
   for(let i=0;i<r.length;i++) a[i]=r.charCodeAt(i);
   return a;
 }
-const pushPronte=()=>'serviceWorker' in navigator&&'PushManager' in window&&SUPA.vapid&&sb;
+const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||
+  (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const INSTALLATA=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const SUPPORTO=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+
+const PUSH={supporto:false,installata:false,permesso:'?',iscritto:false,chi:null,
+  disp:[],ultimo:'',caricato:false};
+
+async function iscrizioneCorrente(){
+  if(!SUPPORTO()) return null;
+  try{
+    const r=await navigator.serviceWorker.getRegistration();
+    if(!r) return null;
+    return await r.pushManager.getSubscription();
+  }catch(e){ return null; }
+}
+async function aggiornaPush(ridisegna){
+  PUSH.supporto=SUPPORTO();
+  PUSH.installata=INSTALLATA();
+  PUSH.permesso=PUSH.supporto?Notification.permission:'non disponibile';
+  const s=await iscrizioneCorrente();
+  PUSH.iscritto=!!s; PUSH.chi=null;
+  if(sb){
+    if(s){
+      try{ const {data}=await sb.from('push').select('chi').eq('endpoint',s.endpoint).maybeSingle();
+        PUSH.chi=data?data.chi:null; }catch(e){}
+    }
+    try{ const {data}=await sb.from('push').select('chi,agg').eq('casa',SUPA.casa);
+      PUSH.disp=data||[]; }catch(e){ PUSH.disp=[]; }
+  }
+  PUSH.caricato=true;
+  if(ridisegna&&vista==='notifiche'&&io) disegna();
+}
+
+/* Il permesso va chiesto per primo, appena tocchi il pulsante: se prima aspettiamo
+   altre cose iOS considera scaduto il gesto e non chiede più niente. */
 async function attivaPush(){
-  if(!pushPronte()){ toast('Su questo telefono le notifiche non sono disponibili.'); return; }
   if(!io){ toast('Prima scegli chi sei.'); return; }
+  if(!SUPPORTO()){
+    toast(IOS&&!INSTALLATA()
+      ? 'Su iPhone prima aggiungi l\'app alla schermata Home, poi aprila da lì.'
+      : 'Questo browser non gestisce le notifiche.');
+    aggiornaPush(true); return;
+  }
+  if(IOS&&!INSTALLATA()){
+    toast('Su iPhone le notifiche arrivano solo dall\'app aggiunta alla Home.');
+    aggiornaPush(true); return;
+  }
+  let perm='default';
+  try{ perm=await Notification.requestPermission(); }
+  catch(e){ PUSH.ultimo='permesso: '+(e.message||e); }
+  if(perm!=='granted'){
+    toast(perm==='denied'
+      ? 'Permesso negato. Si riapre dalle impostazioni del telefono.'
+      : 'Permesso non concesso. Riprova toccando il pulsante.');
+    aggiornaPush(true); return;
+  }
   try{
     const reg=await navigator.serviceWorker.register('sw.js');
     await navigator.serviceWorker.ready;
-    if(await Notification.requestPermission()!=='granted'){
-      toast('Permesso negato. Si riattiva dalle impostazioni del telefono.'); return; }
-    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,
+    let sub=await reg.pushManager.getSubscription();
+    if(sub){ try{ await sub.unsubscribe(); }catch(e){} }
+    sub=await reg.pushManager.subscribe({userVisibleOnly:true,
       applicationServerKey:b64u8(SUPA.vapid)});
-    await sb.from('push').upsert({casa:SUPA.casa,chi:io,sub:sub.toJSON()},{onConflict:'casa,chi'});
+    if(!sb){ toast('Sincronizzazione non ancora pronta: riprova fra qualche secondo.'); return; }
+    const j=sub.toJSON();
+    const {error}=await sb.from('push').upsert({endpoint:j.endpoint,casa:SUPA.casa,chi:io,sub:j,
+      agg:new Date().toISOString()},{onConflict:'endpoint'});
+    if(error) throw error;
     try{ localStorage.setItem('casa-push',io); }catch(e){}
-    toast('Notifiche attive per '+io+' su questo telefono.');
-  }catch(e){ toast('Non sono riuscito ad attivarle. Aggiungi prima l\'app alla schermata home.'); }
+    PUSH.ultimo='iscrizione salvata';
+    toast('Notifiche attive per '+io+' su questo dispositivo.');
+    await aggiornaPush(true);
+  }catch(e){
+    PUSH.ultimo='errore: '+((e&&e.message)||e);
+    toast('Non ci sono riuscito. Guarda il dettaglio qui sotto.');
+    aggiornaPush(true);
+  }
 }
-async function avvisa(chi,titolo,testo){
-  if(!sb||!chi||chi===io) return;
-  try{ await sb.functions.invoke('notifica',{body:{casa:SUPA.casa,a:chi,titolo,testo}}); }catch(e){}
+async function spegniPush(){
+  const s=await iscrizioneCorrente();
+  if(s){
+    try{ if(sb) await sb.from('push').delete().eq('endpoint',s.endpoint); }catch(e){}
+    try{ await s.unsubscribe(); }catch(e){}
+  }
+  try{ localStorage.removeItem('casa-push'); }catch(e){}
+  toast('Notifiche spente su questo dispositivo.');
+  aggiornaPush(true);
+}
+/* se cambi profilo sullo stesso telefono, l'iscrizione deve seguirti */
+async function ricollegaPush(){
+  if(!sb||!io) return;
+  const s=await iscrizioneCorrente();
+  if(!s) return;
+  const j=s.toJSON();
+  try{
+    await sb.from('push').upsert({endpoint:j.endpoint,casa:SUPA.casa,chi:io,sub:j,
+      agg:new Date().toISOString()},{onConflict:'endpoint'});
+    localStorage.setItem('casa-push',io);
+  }catch(e){}
+}
+async function provaPush(){
+  if(!sb){ toast('Sincronizzazione non pronta.'); return; }
+  try{
+    const {data,error}=await sb.functions.invoke('notifica',{body:{casa:SUPA.casa,a:io,
+      titolo:'Prova riuscita',
+      testo:'Se leggi questo, su questo dispositivo le notifiche funzionano.',
+      tag:'prova',vista:'notifiche'}});
+    if(error) throw error;
+    PUSH.ultimo='risposta del server: '+JSON.stringify(data);
+    toast(data&&data.inviate
+      ? 'Mandata. Dovrebbe arrivarti fra un secondo.'
+      : 'Nessun dispositivo iscritto per '+io+'.');
+  }catch(e){
+    PUSH.ultimo='errore: '+((e&&e.message)||e);
+    toast('Il server non ha risposto bene. Dettaglio qui sotto.');
+  }
+  disegna();
+}
+async function avvisa(chi,titolo,testo,opt){
+  opt=opt||{};
+  if(!sb||!chi) return;
+  try{
+    const {data,error}=await sb.functions.invoke('notifica',{body:{casa:SUPA.casa,a:chi,
+      titolo,testo,tag:opt.tag||'casa',vista:opt.vista||'missioni',
+      escludi:opt.escludi||(chi==='tutti'?io:null),urgente:!!opt.urgente}});
+    PUSH.ultimo=error?('errore: '+error.message):('inviate '+((data&&data.inviate)||0));
+  }catch(e){ PUSH.ultimo='errore: '+((e&&e.message)||e); }
+}
+const avvisaTutti=(t,x,o)=>avvisa('tutti',t,x,o);
+
+/* ---- schermata Notifiche ---- */
+function vNotifiche(){
+  const ok=PUSH.iscritto&&PUSH.permesso==='granted'&&PUSH.chi===io;
+  const riga=(t,v,s)=>'<div class="riga"><span class="rt"><b>'+t+'</b><span>'+esc(v)+
+    '</span></span><span class="spunta" style="color:'+(s==='ok'?'#7ED0B4':s==='ko'?'#F0A99C':'#7B9188')+
+    '">'+(s==='ok'?'✓':s==='ko'?'✕':'·')+'</span></div>';
+  const miei=PUSH.disp.filter(d=>d.chi===io).length;
+  let stato,dett;
+  if(!PUSH.supporto){
+    stato='Non disponibili qui';
+    dett=IOS&&!PUSH.installata
+      ? 'Su iPhone e iPad le notifiche esistono solo se apri l\'app dall\'icona sulla schermata Home. Da Safari non arrivano.'
+      : 'Questo browser non le gestisce. Prova con Chrome su Android o Safari 16.4 o più recente su iPhone.';
+  }else if(PUSH.permesso==='denied'){
+    stato='Bloccate dal telefono';
+    dett='Hai detto no in passato. Vai nelle impostazioni del telefono, cerca Roulette di Casa fra le app o fra i siti, e riattiva le notifiche. Poi torna qui.';
+  }else if(ok){
+    stato='Attive per '+io;
+    dett='Questo dispositivo riceve gli avvisi. Se passi il telefono a qualcun altro e cambi profilo, l\'iscrizione lo segue da sola.';
+  }else if(PUSH.iscritto&&PUSH.chi&&PUSH.chi!==io){
+    stato='Iscritto ma a nome di '+PUSH.chi;
+    dett='Tocca il pulsante per riportarle su '+io+'.';
+  }else{
+    stato='Spente';
+    dett='Un tocco e questo dispositivo comincia a ricevere gli avvisi.';
+  }
+  return '<div class="sez"><div class="pan">'+
+    '<div class="next"><div class="nt">Su questo dispositivo</div>'+
+    '<div class="nn" style="color:'+(ok?'#7ED0B4':'#D9A441')+';font-size:19px">'+esc(stato)+'</div>'+
+    '<div class="nc">'+esc(dett)+'</div></div>'+
+    (PUSH.permesso==='denied'||!PUSH.supporto?''
+      :'<button class="btn-o" id="bPushOn" style="margin-top:12px">'+
+       (ok?'Rifai l\'iscrizione':'Attiva le notifiche per '+io)+'</button>')+
+    (ok?'<button class="btn-s" id="bPushTest" style="margin-top:8px">Mandami una notifica di prova</button>'+
+        '<button class="btn-g" id="bPushOff" style="margin-top:8px">Spegnile su questo dispositivo</button>':'')+
+    '</div></div>'+
+    '<div class="sez"><h2>Controllo</h2><div class="pan">'+
+    riga('Il browser le supporta',PUSH.supporto?'sì':'no',PUSH.supporto?'ok':'ko')+
+    riga('App aperta dalla schermata Home',PUSH.installata?'sì':(IOS?'no, obbligatoria su iPhone':'no, non serve su Android'),
+      PUSH.installata?'ok':(IOS?'ko':'-'))+
+    riga('Permesso del telefono',PUSH.permesso==='granted'?'concesso':PUSH.permesso==='denied'?'negato':'mai chiesto',
+      PUSH.permesso==='granted'?'ok':PUSH.permesso==='denied'?'ko':'-')+
+    riga('Iscrizione su questo dispositivo',PUSH.iscritto?'registrata':'assente',PUSH.iscritto?'ok':'ko')+
+    riga('Intestata a',PUSH.chi||'nessuno',PUSH.chi===io?'ok':'-')+
+    riga('Dispositivi collegati a '+io,String(miei),miei?'ok':'ko')+
+    (PUSH.ultimo?'<div class="mnote" style="margin-top:10px">'+esc(PUSH.ultimo)+'</div>':'')+
+    '<button class="btn-g" id="bPushRic" style="margin-top:10px">Ricontrolla</button>'+
+    '</div></div>'+
+    '<div class="sez"><h2>Chi le riceve in casa</h2><div class="pan">'+
+    (PUSH.disp.length?G.map(g=>{
+      const n=PUSH.disp.filter(d=>d.chi===g.n).length;
+      return '<div class="riga"><span class="pall" style="background:'+g.h+'"></span>'+
+        '<span class="rt"><b>'+g.n+'</b><span>'+(n?n+(n===1?' dispositivo':' dispositivi'):'nessun dispositivo')+
+        '</span></span><span class="spunta">'+(n?'✓':'')+'</span></div>';
+    }).join(''):'<div class="vuoto">Nessuno le ha ancora attivate.</div>')+
+    '<p class="p" style="margin:10px 0 0;font-size:11.5px;color:#7B9188">'+
+    'Ognuno deve attivarle sul proprio telefono, una volta sola.</p></div></div>'+
+    '<div class="sez"><h2>Cosa arriva</h2><div class="pan">'+
+    ['Missione a 24 ore dalla scadenza · a chi ce l\'ha',
+     'Colpo grosso · agli altri tre, quando una missione diventa rubabile',
+     'Ultime tre ore prima delle 21',
+     'Missione saltata, con la quota che finisce in cassa',
+     'Flash appena lanciata, a 12 ore dalla fine e alla scadenza con le due multe',
+     'Servizio di stasera e servizio saltato',
+     'Bidone da mettere fuori la sera prima, e bidone dimenticato',
+     'Missione rubata · a chi se l\'è fatta soffiare',
+     'Proposte di scambio, accettate e rifiutate',
+     'Domenica alle 20 · quanto rischi di lasciare in cassa',
+     'Lunedì alle 8 · settimana nuova',
+     'Primo del mese · quote arretrate da versare'
+    ].map(t=>'<div class="riga"><span class="rt"><span>'+t+'</span></span></div>').join('')+
+    '</div></div>';
 }
 
 /* ==================== AVVIO ==================== */
 (async()=>{
   await carica(); await salva();
+  try{
+    const q=new URLSearchParams(location.search).get('v');
+    if(q) vista=q;
+  }catch(e){}
   avvia_sync();
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+  aggiornaPush(false);
+  setTimeout(()=>{ ricollegaPush(); aggiornaPush(true); },4000);
   setInterval(async()=>{
     const a=avvioUfficiale(), b=rollover(), c=chiudiSpazzatura(),
           d=chiudiFlash(), e=chiudiServizi();
