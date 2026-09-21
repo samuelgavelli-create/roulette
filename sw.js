@@ -1,6 +1,6 @@
 /* Roulette di Casa - service worker
    Due compiti: tenere l'app apribile anche senza rete e ricevere le notifiche. */
-const CACHE = 'roulette-v5';
+const CACHE = 'roulette-v6';
 const SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
