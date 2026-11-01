@@ -1235,10 +1235,10 @@ var ESITI_RUOTA = {
   niente: { t: 'Niente', s: 'Sarà per la prossima' }
 };
 var SORPRESE = {
-  oro: { t: "Missione d'oro", s: 'Una missione a caso della settimana vale il doppio dei punti' },
+  oro: { t: "Missione d'oro", s: 'Una delle tue missioni di questa settimana vale il doppio dei punti' },
   sfida: { t: 'Sfida lampo per tutti', s: 'Dieci minuti a testa: se la fate tutti e quattro, +100 sulla barra della cena' },
-  jolly: { t: 'Jolly extra', s: 'Un jolly oro in più a una persona a caso' },
-  leggera: { t: 'Settimana leggera', s: "A una persona un quarto d'ora di missioni in meno, con i punti regalati" }
+  jolly: { t: 'Jolly extra', s: 'Un jolly oro in più a chi ha girato' },
+  leggera: { t: 'Settimana leggera', s: "A chi ha girato un quarto d'ora di missioni in meno, con i punti regalati" }
 };
 
 /* ==================== PUNTI ====================
@@ -1368,6 +1368,16 @@ function voci(E, c, t0, t1) { return E.filter(function (e) { return !e.bar && e.
    Il primo periodo, per prendere la mano, va dall'8 novembre al 13 dicembre.
    Il giorno del conto (la seconda domenica) esce quanto versare, entro la domenica
    successiva. Ogni periodo vale una parte intera; chi è via ha la parte in proporzione. */
+/* la missione d'oro della sorpresa va a una missione di chi l'ha fatta uscire */
+function spostaOro(S, chi, presi, rng) {
+  var mie = (presi || S.missioni.filter(function (m) { return m.chi === chi; })).filter(function (m) { return !m.coll && !m.coppia && !m.fatta; });
+  if (!mie.length || mie.some(function (m) { return m.oro; })) return false;
+  var altra = S.missioni.filter(function (m) { return m.oro && !m.fatta && m.chi !== chi; })[0];
+  if (!altra) return false;
+  delete altra.oro;
+  mie[Math.floor((rng ? rng() : 0) * mie.length)].oro = true;
+  return true;
+}
 /* la missione di famiglia resta aperta tutta la settimana: da domenica a domenica sera */
 function famFinestra(f) {
   var dom = domenicaK(kTs(f.giorno, 12, 0));
@@ -1414,14 +1424,16 @@ function conti(A, c, E, adesso) {
     var utili = Math.max(0, giorniTra(dal, P.a)), via = 0;
     for (var d = dal; d < P.a; d = piuGiorni(d, 1)) if (eVia(A, c, domenicaDiK(d))) via++;
     var parteEff = r2(parte * Math.max(0, utili - via) / tot);
+    var vecchio = P.k === cfg.inizioPunti ? r2(((A.vecchie || {})[c]) || 0) : 0, dovuto = r2(parteEff + vecchio);
     var punti = somma(E, c, t0, t1);
     var credito = r2(Math.max(0, punti) * cfg.valorePunto);
     var coperto = r2(credito + riporto);
-    var daVersare = r2(Math.max(0, parteEff - coperto));
-    var eccesso = r2(Math.min(parte, Math.max(0, coperto - parteEff)));
-    var serve = Math.max(0, Math.ceil((parteEff - riporto) / cfg.valorePunto - 1e-9));
+    var daVersare = r2(Math.max(0, dovuto - coperto));
+    var eccesso = r2(Math.min(parte, Math.max(0, coperto - dovuto)));
+    var serve = Math.max(0, Math.ceil((dovuto - riporto) / cfg.valorePunto - 1e-9));
     out.push({
       k: P.k, da: P.da, a: P.a, mese: P.mese, nome: nomePeriodo(P.k), chi: c, parte: parte, parteEff: parteEff,
+      vecchio: vecchio, vecchioCoperto: r2(Math.min(vecchio, Math.max(0, coperto - parteEff))), dovuto: dovuto,
       giorniVia: via, punti: punti, credito: credito, riporto: riporto, daVersare: daVersare, eccesso: eccesso,
       mancano: Math.max(0, serve - Math.max(0, punti)), serve: serve,
       versato: (((A.versamenti || {})[P.k]) || {})[c] || null,
@@ -1555,9 +1567,43 @@ var OPS = {
        no (la stessa operazione si riapplica sullo stato del server quando ci si risincronizza) */
     var x = clona(op.x || {}), cfg = cfgDi(A);
     S.estratto = true; S.missioni = x.missioni || []; S.sorpresa = x.sorpresa || null; S.sfida = x.sfida || null;
-    S.leggera = x.leggera || null; S.da = op.chi || null; S.t = op.t;
-    if (x.jolly) { var tq = tasca(A, x.jolly); tq.oro = Math.min(cfg.maxTasca, tq.oro + 1); S.jolly = x.jolly; }
+    /* la sorpresa è di chi ha girato: settimana leggera e jolly extra vanno a lui */
+    S.da = op.chi || null; S.t = op.t;
+    S.leggera = x.leggera ? (op.chi || x.leggera) : null;
+    var chiJ = x.jolly ? (op.chi || x.jolly) : null;
+    if (chiJ) { var tq = tasca(A, chiJ); tq.oro = Math.min(cfg.maxTasca, tq.oro + 1); S.jolly = chiJ; }
     if (x.fam) { if (!A.famiglia) A.famiglia = {}; if (!A.famiglia[x.fam.mese]) A.famiglia[x.fam.mese] = x.fam; }
+    return ok();
+  },
+  sorpresa_ok: function (D, A, op) {
+    var S = A.sett;
+    if (!S || S.k !== op.k || !S.da) return no('settimana diversa');
+    if (S.sorpresaOk) return no('già sistemata', true);
+    var cfg = cfgDi(A);
+    if (S.jolly && S.jolly !== S.da) {
+      var a = tasca(A, S.jolly), b = tasca(A, S.da);
+      if (a.oro > 0) a.oro--;
+      b.oro = Math.min(cfg.maxTasca, b.oro + 1);
+      S.jolly = S.da;
+    }
+    if (S.leggera && S.leggera !== S.da) S.leggera = S.da;
+    if (S.sorpresa === 'oro') spostaOro(S, S.da, null, rngDa(hash('oro:' + S.k)));
+    S.sorpresaOk = true;
+    return ok();
+  },
+  vecchie_foto: function (D, A, op) {
+    if (A.vecchie) return no('già fatta', true);
+    var v = {};
+    NOMI.forEach(function (n) { var x = r2(((op.deb || {})[n]) || 0); if (x > 0) v[n] = x; });
+    A.vecchie = v;
+    return ok();
+  },
+  vecchie_chiudi: function (D, A, op) {
+    if (!A.vecchie || A.vecchieChiuse) return no('già fatto', true);
+    /* da qui la quota vecchia vive dentro il primo conto: coperta dai punti o da versare con lui */
+    if (!D.debiti) D.debiti = {};
+    NOMI.forEach(function (n) { if ((A.vecchie[n] || 0) > 0) D.debiti[n] = 0; });
+    A.vecchieChiuse = op.t;
     return ok();
   },
   /* il giro personale: fascia di tempo scelta, missioni pescate dalla bacheca, premio */
@@ -1577,6 +1623,7 @@ var OPS = {
       var cand = presi.filter(function (m) { return !m.coll && !m.x2 && !m.oro && !m.fatta; });
       if (cand.length) { mx = cand[Math.floor(rng() * cand.length)]; mx.x2 = true; } else e = 'p5';
     }
+    if (S.sorpresa === 'oro' && S.da === op.chi) spostaOro(S, op.chi, presi, rng);
     var tq = tasca(A, op.chi);
     if (e === 'flash') tq.flash = Math.min(cfg.maxGettoni, tq.flash + 1);
     if (e === 'rosso') tq.rosso = Math.min(cfg.maxTasca, tq.rosso + 1);
@@ -1929,6 +1976,7 @@ var OPS = {
     var v = r2(((D.debiti || {})[op.n]) || 0);
     if (!(v > 0)) return no(op.n + ' non ha quote vecchie', true);
     D.debiti[op.n] = 0;
+    if (A && A.vecchie && !A.vecchieChiuse && A.vecchie[op.n]) A.vecchie[op.n] = 0;
     D.cassa = r2((D.cassa || 0) + v);
     if (!D.movimenti) D.movimenti = [];
     D.movimenti.unshift({ id: 'v' + op.id, ts: op.t, chi: op.n, causale: 'Versamento quote', val: v });
@@ -1942,6 +1990,7 @@ var OPS = {
     if (!l || l.tolta || l.tipo !== 'saltata') return no('voce non trovata', true);
     var v = r2(l.val);
     D.debiti[l.chi] = r2(Math.max(0, ((D.debiti || {})[l.chi] || 0) - v));
+    if (A && A.vecchie && !A.vecchieChiuse && A.vecchie[l.chi] != null) A.vecchie[l.chi] = D.debiti[l.chi];
     if (D.conta && D.conta[l.chi]) D.conta[l.chi].cassa = r2(Math.max(0, (D.conta[l.chi].cassa || 0) - v));
     l.tolta = { da: op.chi, ts: op.t };
     return ok();
@@ -1951,6 +2000,7 @@ var OPS = {
     if (!l || !l.tolta) return no('voce non trovata', true);
     var v = r2(l.val);
     D.debiti[l.chi] = r2(((D.debiti || {})[l.chi] || 0) + v);
+    if (A && A.vecchie && !A.vecchieChiuse) A.vecchie[l.chi] = D.debiti[l.chi];
     if (D.conta && D.conta[l.chi]) D.conta[l.chi].cassa = r2((D.conta[l.chi].cassa || 0) + v);
     delete l.tolta;
     return ok();
@@ -2279,6 +2329,14 @@ function automatiche(D, adesso, rng) {
   if (!A.sett || A.sett.k < dk) out.push({ o: 'chiudi', id: 'chiudi:' + dk, k: dk, t: t });
   var mk = meseK(adesso);
   if (A.tascaMese !== mk && (!A.da || adesso >= A.da)) out.push({ o: 'mese_jolly', id: 'jolly:' + mk, mese: mk, t: t });
+  var S0 = A.sett;
+  if (S0 && S0.estratto && S0.da && !S0.sorpresaOk && ((S0.jolly && S0.jolly !== S0.da) || (S0.leggera && S0.leggera !== S0.da) ||
+      (S0.sorpresa === 'oro' && S0.giri && S0.giri[S0.da] && !S0.missioni.some(function (m) { return m.oro && (m.chi === S0.da || m.fatta); }))))
+    out.push({ o: 'sorpresa_ok', id: 'sorpresa-ok:' + S0.k, k: S0.k, t: t });
+  /* le quote vecchie in euro: si fotografano alla partenza e si scalano con i punti del primo conto */
+  if (A.da && adesso >= A.da && !A.vecchie) out.push({ o: 'vecchie_foto', id: 'vecchie-foto', t: t, deb: clona(D.debiti || {}) });
+  var P1 = periodi(A, adesso)[0];
+  if (A.vecchie && !A.vecchieChiuse && P1 && adesso >= kTs(P1.a, 0, 0)) out.push({ o: 'vecchie_chiudi', id: 'vecchie-chiudi', t: t });
   var E = registro(A, adesso), b = barra(A, E, adesso);
   if (b.pieno) out.push({ o: 'cena_sblocca', id: 'cena:' + b.da, daPrima: b.da, t: t, punti: b.tot, per: b.per });
   var C = mk;
@@ -2401,11 +2459,11 @@ function avvisi(D, adesso) {
   periodi(A, adesso).forEach(function (Pd) {
     if (oggi === Pd.a) NOMI.forEach(function (n) {
       var c = contoDi(A, Pd.k, n, reg(), adesso);
-      if (!c || c.versato || c.parteEff <= 0) return;
+      if (!c || c.versato || c.dovuto <= 0) return;
       add({ k: 'a1:conto:' + Pd.k + ':' + n, quando: kTs(oggi, 10, 0), finestra: 10 * 36e5, a: n, tag: 'a1|conto', vista: 'famiglia',
         titolo: 'Il conto è pronto',
-        testo: c.daVersare > 0 ? maiuscola(c.nome) + (c.punti > 0 ? ' hai fatto ' + c.punti + ' punti' : ' sei a ' + c.punti + ' punti') + ': versi ' + eur(c.daVersare) + ' nella cassa comune entro ' + dataLunga(c.scadenza) + '.'
-          : 'Con ' + c.punti + ' punti hai coperto tutta la tua parte: questa volta non versi niente.' });
+        testo: (c.vecchio > 0 ? 'Dentro c\'è anche la quota vecchia (' + eur(c.vecchio) + '). ' : '') + (c.daVersare > 0 ? maiuscola(c.nome) + (c.punti > 0 ? ' hai fatto ' + c.punti + ' punti' : ' sei a ' + c.punti + ' punti') + ': versi ' + eur(c.daVersare) + ' nella cassa comune entro ' + dataLunga(c.scadenza) + '.'
+          : 'Con ' + c.punti + ' punti hai coperto tutta la tua parte: questa volta non versi niente.') });
     });
     if (oggi === piuGiorni(Pd.a, 6)) NOMI.forEach(function (n) {
       var c = contoDi(A, Pd.k, n, reg(), adesso);
@@ -3459,10 +3517,10 @@ function cartaConto() {
   if (inProva()) return '<section class="sez"><button class="card mese" data-a="mese" style="width:100%;text-align:left"><div class="cifre"><b>Il primo conto</b><span>' + esc(c.nome) + '</span></div>' +
     '<p class="nota">Si contano i punti da domenica ' + M.dataLunga(c.da).replace(/^\w+ /, '') + '; il conto esce domenica ' + M.dataLunga(c.a).replace(/^\w+ /, '') +
     '. La tua parte: ' + M.eur(c.parteEff) + ', ogni punto vale ' + M.eur(cfg().valorePunto) + '.</p></button></section>';
-  var cop = M.r2(c.credito + c.riporto), perc = c.parteEff > 0 ? Math.min(100, Math.round(cop / c.parteEff * 100)) : 100;
+  var cop = M.r2(c.credito + c.riporto), perc = c.dovuto > 0 ? Math.min(100, Math.round(cop / c.dovuto * 100)) : 100;
   return '<section class="sez"><button class="card mese" data-a="mese" style="width:100%;text-align:left"><div class="cifre"><b>Il tuo conto</b><span>' + c.punti + ' pt · ' + M.eur(c.credito) + '</span></div>' +
     '<div class="barra viola"><i style="width:' + perc + '%"></i></div>' +
-    '<p class="nota" style="margin-top:.5rem">' + M.maiuscola(c.nome) + ' · parte ' + M.eur(c.parteEff) + (c.riporto ? ' · riporto ' + M.eur(c.riporto) : '') + ' · ' +
+    '<p class="nota" style="margin-top:.5rem">' + M.maiuscola(c.nome) + ' · parte ' + M.eur(c.parteEff) + (c.vecchio ? ' + quota vecchia ' + M.eur(c.vecchio) : '') + (c.riporto ? ' · riporto ' + M.eur(c.riporto) : '') + ' · ' +
     (c.daVersare > 0 ? 'ti mancano <b>' + c.mancano + ' punti</b> per versare 0 €' : '<b>coperta tutta: non versi niente</b>') + '</p></button></section>';
 }
 function vOggi() {
@@ -3678,7 +3736,7 @@ function cartaVecchie() {
   var chi = NOMI.filter(function (n) { return (D.debiti || {})[n] > 0 || vociVecchie(n).some(function (l) { return l.tolta && adesso() - (l.tolta.ts || 0) < 7 * 864e5; }); });
   var pend = D.pendenze || [];
   if (!chi.length && !pend.length) return '';
-  return '<section class="sez"><h2>Quote della versione vecchia</h2><div class="card"><p class="nota" style="margin-bottom:.5rem">Le multe in euro di prima restano da versare finché non le versate o le togliete con la ×.</p>' +
+  return '<section class="sez"><h2>Quote della versione vecchia</h2><div class="card"><p class="nota" style="margin-bottom:.5rem">' + (A() && A().vecchie && !A().vecchieChiuse ? '<b>Si possono riscattare con i punti:</b> la quota vecchia è dentro il primo conto (fino al 12 dicembre), e i punti in più la scalano. Chi vuole la versa anche prima.' : 'Le multe in euro di prima restano da versare finché non le versate o le togliete con la ×.') + '</p>' +
     chi.map(function (n) {
       var d = M.r2((D.debiti || {})[n] || 0), voci = vociVecchie(n).slice(0, 10);
       return '<div style="margin-top:.6rem"><div class="riga">' + av(n, 'p') + '<span class="rt"><b>' + esc(n) + '</b><span>da versare ' + M.eur(d) + '</span></span>' +
@@ -3821,6 +3879,7 @@ PAGINE.mese = function () {
     h += '<section class="sez"><h2>' + M.maiuscola(c.nome) + (c.chiuso ? '' : ' (in corso)') + '</h2><div class="card mese"><div class="cifre"><b>' + c.punti + ' punti</b><span>' + M.eur(c.credito) + '</span></div>' +
       '<div class="dv"><span class="t">La tua parte' + (c.giorniVia ? '<small>' + c.giorniVia + ' giorni via: cala in proporzione</small>' : '') + '</span><b>' + M.eur(c.parteEff) + '</b></div>' +
       '<div class="dv"><span class="t">Credito dei punti<small>' + c.punti + ' × ' + M.eur(cfg().valorePunto) + '</small></span><b>−' + M.eur(c.credito) + '</b></div>' +
+      (c.vecchio ? '<div class="dv"><span class="t">Quota vecchia<small>da riscattare con i punti in questo conto</small></span><b>+' + M.eur(c.vecchio) + '</b></div>' : '') +
       (c.riporto ? '<div class="dv"><span class="t">Riporto dal conto prima</span><b>−' + M.eur(c.riporto) + '</b></div>' : '') +
       '<div class="dv"><span class="t"><b>' + (c.chiuso ? 'Da versare' : 'Da versare se finisse oggi') + '</b><small>' + (c.chiuso ? 'entro ' + M.dataLunga(c.scadenza) : 'il conto esce ' + M.dataLunga(c.a)) + '</small></span><b>' + M.eur(c.daVersare) + '</b></div>' +
       (c.eccesso ? '<p class="nota" style="margin-top:.4rem">Credito in più: ' + M.eur(c.eccesso) + (cfg().riporto ? ', passa al conto dopo.' : '.') + '</p>' : '') +
@@ -3855,6 +3914,7 @@ PAGINE.regole = function () {
       (p1 ? 'Il primo conto è più lungo: i punti si raccolgono da ' + M.dataLunga(p1.da) + ' a ' + M.dataLunga(M.piuGiorni(p1.a, -1)) + ', e il conto esce ' + M.dataLunga(p1.a) + '.' : ''),
       'Il giorno del conto esce quanto versare: la parte meno il credito dei punti, mai sotto zero. Si versa nella cassa comune entro la domenica dopo.',
       'Il credito in più passa al conto dopo, fino a una parte intera. Chi è via ha la parte che cala in proporzione.',
+      'Le quote vecchie in euro entrano nel primo conto: i punti in più le scalano, così ci si può riscattare.',
       'La cassa paga la spesa e gli acquisti per casa; quello che avanza va verso l\'obiettivo grande.']) +
     sez('Jolly, Flash e sorprese', ['Jolly oro: uno al mese a testa (massimo ' + c.maxTasca + '). Rigira una tua missione: ne esce un\'altra con minuti simili.',
       'Jolly rosso: esce dalla ruota. Passa una tua missione sotto i 20 minuti a chi vuoi.',
