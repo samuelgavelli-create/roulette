@@ -27,6 +27,7 @@
   --f-corpo:'Nunito',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
   --f-titoli:'Baloo 2','Nunito',system-ui,sans-serif;
   --bg:#EEF1FB; --bg-vetro:rgba(238,241,251,.88); --bg-a:#FFE7C2; --bg-b:#D9D2FF;
+  --st-bg:linear-gradient(160deg,#FFF4E4,#FFDCBC); --st-bord:#F3C99C; --st-ink:#7A4518; --st-pall:rgba(122,69,24,.18);
   --card:#FFFFFF; --ink:#1D2140; --ink2:#59618A; --ink3:#8A91B4;
   --bord:#DCE1F2; --bord2:#C9D0E8; --track:#E6E9F6;
   --viola:#7B61FF; --viola-d:#5A43D6; --viola-l:#EEEAFF;
@@ -43,6 +44,7 @@
 @media (prefers-color-scheme:dark){
   :root:not([data-tema="chiaro"]){
     --bg:#12152B; --bg-vetro:rgba(18,21,43,.88); --bg-a:#3A2A1A; --bg-b:#2A2560;
+    --st-bg:linear-gradient(160deg,#3B2B20,#2A1E17); --st-bord:#55402F; --st-ink:#F5D2AC; --st-pall:rgba(245,210,172,.2);
     --card:#1C2142; --ink:#F1F3FF; --ink2:#A7AFD6; --ink3:#7A82AD;
     --bord:#2C3466; --bord2:#0B0E22; --track:#272E58;
     --viola:#9B87FF; --viola-d:#6A52E6; --viola-l:#2A2760;
@@ -57,6 +59,7 @@
 }
 :root[data-tema="scuro"]{
   --bg:#12152B; --bg-vetro:rgba(18,21,43,.88); --bg-a:#3A2A1A; --bg-b:#2A2560;
+  --st-bg:linear-gradient(160deg,#3B2B20,#2A1E17); --st-bord:#55402F; --st-ink:#F5D2AC; --st-pall:rgba(245,210,172,.2);
   --card:#1C2142; --ink:#F1F3FF; --ink2:#A7AFD6; --ink3:#7A82AD;
   --bord:#2C3466; --bord2:#0B0E22; --track:#272E58;
   --viola:#9B87FF; --viola-d:#6A52E6; --viola-l:#2A2760;
@@ -528,6 +531,57 @@ canvas.festa{position:fixed;inset:0;width:100vw;height:100vh;z-index:85;pointer-
 .fam-riga .rt span{color:rgba(255,255,255,.92)}
 textarea.inp{min-height:3.2rem;resize:vertical;line-height:1.35;padding-top:.6rem}
 @media (prefers-reduced-motion:reduce){.cta .deco,.btn.oro::after{animation:none!important}}
+
+/* ---------- le stufe: due stufe che escono dalla carta, coperchio del pellet sopra e vetro sotto ---------- */
+.stufe-card{position:relative;display:flex;align-items:center;justify-content:space-between;gap:.4rem;margin:1.7rem 0 2rem;padding:0 .8rem;height:9.4rem;
+  border-radius:1.4rem;background:var(--st-bg);border:2px solid var(--st-bord);box-shadow:var(--ombra)}
+.stufe-card.tutte{box-shadow:var(--ombra),0 0 0 .3rem rgba(255,174,26,.35)}
+.stufa{position:relative;width:min(6.4rem,31%);flex:none;margin:-1.5rem 0 -1.8rem;display:flex;flex-direction:column;align-items:center;z-index:1}
+.st-corpo{width:100%;height:11.5rem;border-radius:1.5rem 1.5rem 1rem 1rem;background:linear-gradient(180deg,#4E546F,#2C3044);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.14),inset 0 -4px 0 rgba(0,0,0,.28),0 8px 16px rgba(30,20,10,.28);
+  display:flex;flex-direction:column;align-items:center;padding:.5rem .5rem .6rem;gap:.35rem}
+.st-carico{width:78%;height:3rem;flex:none;border-radius:.9rem;position:relative;display:grid;place-items:center;color:#fff;
+  background:linear-gradient(180deg,#7C84A6,#5A6182);box-shadow:inset 0 -3px 0 rgba(0,0,0,.25),0 0 0 2px rgba(255,255,255,.08);transition:transform .12s}
+.st-carico:active,.st-vetro:active{transform:scale(.94)}
+.st-carico.fatto{background:var(--c);box-shadow:inset 0 -3px 0 rgba(0,0,0,.22),0 0 0 2px rgba(255,255,255,.35)}
+.st-carico.fatto.chiaro{color:#1D2140}
+.st-carico.appena{animation:st-riempi .5s var(--rit,0ms) cubic-bezier(.3,1.5,.5,1) both}
+@keyframes st-riempi{from{background:#6B7393;transform:none}55%{transform:scale(1.14)}to{background:var(--c);transform:none}}
+.st-pellet{display:flex;flex-wrap:wrap;width:2.1rem;gap:.12rem .18rem;justify-content:center}
+.st-pellet i{width:.3rem;height:.62rem;border-radius:.2rem;background:#D9B48A;box-shadow:inset 0 -2px 0 rgba(0,0,0,.18);transform:rotate(28deg)}
+.st-pellet i:nth-child(2n){transform:rotate(-24deg);background:#C99B6B}
+.st-pellet i:nth-child(3){background:#E2C29A}
+.st-chi{font-family:var(--f-titoli);font-weight:800;font-size:1.05rem;letter-spacing:.02em;line-height:1}
+.st-targa{font-size:.6rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#D2D6EE;background:rgba(0,0,0,.25);
+  padding:.14rem .35rem;border-radius:.4rem;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;flex:none}
+.st-vetro{flex:1;width:100%;border-radius:.9rem;position:relative;overflow:hidden;border:3px solid #191C29;display:grid;place-items:center;transition:transform .12s;
+  background:radial-gradient(circle at 28% 26%,rgba(255,255,255,.07),transparent 38%),radial-gradient(circle at 62% 78%,#2E2420 0,#121215 62%)}
+.st-vetro:not(.fatto)::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 100%,rgba(255,120,40,.28),transparent 60%)}
+.st-vetro.fatto{border-color:var(--c);background:linear-gradient(160deg,#EEF9FF 0%,#C4E9FB 45%,#8ECFF1 100%)}
+.st-vetro.fatto::after{content:"";position:absolute;inset:-30%;background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.8) 49%,transparent 56%);pointer-events:none}
+.st-vetro.appena::before{content:"";position:absolute;inset:0;z-index:2;background:radial-gradient(circle at 62% 78%,#2E2420 0,#121215 62%);
+  animation:st-pulisci .75s var(--rit,0ms) ease-in-out both}
+@keyframes st-pulisci{from{clip-path:inset(0 0 0 0)}to{clip-path:inset(0 0 0 100%)}}
+.st-vetro.appena::after{animation:st-luccica .9s calc(var(--rit,0ms) + .55s) ease-out both}
+@keyframes st-luccica{from{transform:translateX(-60%)}to{transform:translateX(60%)}}
+.st-fiamma{position:absolute;bottom:.2rem;left:50%;width:1.7rem;height:2.4rem;margin-left:-.85rem;pointer-events:none}
+.st-fiamma i{position:absolute;left:0;right:0;bottom:0;margin:auto;border-radius:50% 50% 45% 45%/62% 62% 38% 38%;transform-origin:50% 100%;animation:st-fiamma .9s ease-in-out infinite alternate}
+.st-fiamma i:first-child{width:1.7rem;height:2.4rem;background:radial-gradient(ellipse at 50% 80%,#FFB13B,#FF6A1A 70%)}
+.st-fiamma i:last-child{width:.9rem;height:1.35rem;background:radial-gradient(ellipse at 50% 85%,#FFF6C2,#FFD34D 75%);animation-delay:-.4s}
+@keyframes st-fiamma{from{transform:scale(1,1) rotate(-2deg)}to{transform:scale(.92,1.1) rotate(3deg)}}
+.st-vetro:not(.fatto) .st-fiamma{opacity:.3;filter:blur(1.5px)}
+.st-vetro .st-chi{position:absolute;right:.22rem;top:.22rem;z-index:3;font-size:.68rem;background:var(--c);color:#fff;border-radius:.4rem;padding:.12rem .3rem}
+.st-vetro.chiaro .st-chi{color:#1D2140}
+.st-piedi{width:76%;height:.5rem;background:linear-gradient(90deg,#2C3044 0 16%,transparent 16% 84%,#2C3044 84%);border-radius:0 0 .3rem .3rem}
+.st-centro{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;text-align:center;gap:.35rem;color:var(--st-ink)}
+.st-centro>b{font-family:var(--f-titoli);font-weight:800;font-size:2.1rem;line-height:1}
+.st-centro>b small{font-size:1rem;opacity:.65}
+.st-pallini{display:flex;gap:.28rem}
+.st-pallini i{width:.62rem;height:.62rem;border-radius:50%;background:var(--st-pall)}
+.st-aiuto{font-size:.66rem;font-weight:700;line-height:1.3;opacity:.9}
+.pellet-strato{position:fixed;inset:0;pointer-events:none;z-index:88;overflow:hidden}
+.pellet-strato i{position:absolute;width:5px;height:11px;border-radius:3px;box-shadow:inset 0 -2px 0 rgba(0,0,0,.2)}
+@media (prefers-reduced-motion:reduce){.st-carico.appena,.st-vetro.appena::before,.st-vetro.appena::after,.st-fiamma i{animation:none!important}}
 </style>
 </head>
 <body>
@@ -805,7 +859,7 @@ var CFG_BASE = {
   pt: {
     tavola: 10, piatti: 15, bidone: 10, bidoneCopre: 20, bidoneDimenticato: -20,
     lavAvvia: 10, lavStendi: 15, lavRitira: 20, oggetto: 5, oggettiMax: 3, oggettiZero: -10,
-    flashBonus: 10, flashMancata: -20, colpoPerc: 50, sfida: 10, sfidaTutti: 100, famigliaTutti: 100, servizioCopre: 5,
+    flashBonus: 10, flashMancata: -20, colpoPerc: 50, sfida: 10, sfidaTutti: 100, famigliaTutti: 100, servizioCopre: 5, stufa: 5,
     leggera: 15, giro10: 10, giro5: 5, gettone: 10
   },
   sorprese: { oro: 40, sfida: 30, jolly: 15, leggera: 15 },
@@ -817,6 +871,8 @@ var CFG_BASE = {
     'm:erba-orto': { Tony: 50, Samuel: 25, Thomas: 25 }
   },
   minutiScelte: [30, 45, 60, 75, 100, 120],
+  /* missione di stagione: le stufe a pellet. Ogni giorno, per ogni stufa, il carico e il vetro pulito */
+  stufe: { attive: true, nomi: ['Sala', 'Saletta'] },
   inizio: '2026-11-01',        /* si riparte da capo: domenica 1 novembre */
   inizioPunti: '2026-11-01',   /* i punti contano da subito; il primo conto è la seconda domenica di dicembre */
   maxTasca: 2,
@@ -1340,6 +1396,13 @@ function registro(A, adesso) {
       else add(t.fatta.c, (pt[t.sv.k] || 10) + (pt.servizioCopre || 0), t.fatta.t, 'servizio', t.sv.nome + ' al posto di ' + t.chi, t.k);
     });
   }
+  Object.keys(A.stufe || {}).forEach(function (g) {
+    var giorno = A.stufe[g], nomi = (cfg.stufe && cfg.stufe.nomi) || ['Stufa 1', 'Stufa 2'];
+    Object.keys(giorno).forEach(function (k) {
+      var x = giorno[k], i = Number(k.charAt(1)), nome = 'Stufa ' + (nomi[i] || (i + 1)).toLowerCase();
+      add(x.c, pt.stufa || 5, x.t, 'stufa', nome + (k.charAt(2) === 'c' ? ': pellet caricato' : ': vetro pulito'), 'stufa:' + g + ':' + k);
+    });
+  });
   Object.keys(A.famiglia || {}).forEach(function (mk) {
     var f = A.famiglia[mk], ps = Object.keys(f.part || {});
     ps.forEach(function (c) { add(c, f.part[c].min, f.part[c].t, 'famiglia', 'Missione di famiglia: ' + f.t, 'fam:' + mk); });
@@ -1368,6 +1431,8 @@ function voci(E, c, t0, t1) { return E.filter(function (e) { return !e.bar && e.
    Il primo periodo, per prendere la mano, va dall'8 novembre al 13 dicembre.
    Il giorno del conto (la seconda domenica) esce quanto versare, entro la domenica
    successiva. Ogni periodo vale una parte intera; chi è via ha la parte in proporzione. */
+/* le quattro spunte delle stufe: s0/s1 = la stufa, c = carico del pellet, p = pulizia del vetro */
+var STUFE_K = ['s0c', 's0p', 's1c', 's1p'];
 /* la missione d'oro della sorpresa va a una missione di chi l'ha fatta uscire */
 function spostaOro(S, chi, presi, rng) {
   var mie = (presi || S.missioni.filter(function (m) { return m.chi === chi; })).filter(function (m) { return !m.coll && !m.coppia && !m.fatta; });
@@ -1573,6 +1638,28 @@ var OPS = {
     var chiJ = x.jolly ? (op.chi || x.jolly) : null;
     if (chiJ) { var tq = tasca(A, chiJ); tq.oro = Math.min(cfg.maxTasca, tq.oro + 1); S.jolly = chiJ; }
     if (x.fam) { if (!A.famiglia) A.famiglia = {}; if (!A.famiglia[x.fam.mese]) A.famiglia[x.fam.mese] = x.fam; }
+    return ok();
+  },
+  /* le stufe: una spunta per azione, una volta al giorno, a chi la fa per primo */
+  stufa: function (D, A, op) {
+    var cfg = cfgDi(A);
+    if (!cfg.stufe || !cfg.stufe.attive) return no('la stagione delle stufe è finita');
+    if (STUFE_K.indexOf(op.k) < 0 || Number(op.k.charAt(1)) >= (cfg.stufe.nomi || []).length) return no('stufa sconosciuta');
+    if (NOMI.indexOf(op.chi) < 0) return no('chi sei?');
+    if (A.da && op.t < A.da) return no('si parte ' + dataLunga(iso(A.da)));
+    if (op.g !== iso(op.t)) return no('si segna solo oggi');
+    if (!A.stufe) A.stufe = {};
+    var g = A.stufe[op.g] = A.stufe[op.g] || {};
+    if (g[op.k]) return no(g[op.k].c === op.chi ? 'l\'hai già segnata' : 'l\'ha già fatta ' + g[op.k].c, true);
+    g[op.k] = { c: op.chi, t: op.t };
+    return ok();
+  },
+  stufa_togli: function (D, A, op) {
+    var g = (A.stufe || {})[op.g];
+    if (!g || !g[op.k]) return no('non c\'era', true);
+    if (g[op.k].c !== op.chi) return no('la toglie solo chi l\'ha segnata');
+    delete g[op.k];
+    if (!Object.keys(g).length) delete A.stufe[op.g];
     return ok();
   },
   sorpresa_ok: function (D, A, op) {
@@ -2203,6 +2290,7 @@ function compatta(A, C, adesso) {
   A.flash = (A.flash || []).filter(function (f) { return f.ts >= t - 7 * GIORNO; });
   Object.keys(A.famiglia || {}).forEach(function (mk) { if (A.famiglia[mk].giorno < c7) delete A.famiglia[mk]; });
   Object.keys(A.via || {}).forEach(function (k) { if (k < c7) delete A.via[k]; });
+  Object.keys(A.stufe || {}).forEach(function (g) { if (g < C) delete A.stufe[g]; });
   return ok();
 }
 
@@ -2539,7 +2627,7 @@ return {
   VERSIONE: VERSIONE, TZ: TZ, GIORNO: GIORNO, NOMI: NOMI, RUOLI: RUOLI, INIZIALI: INIZIALI, MESI: MESI, GG: GG, GGC: GGC,
   PALETTE: PALETTE, COLORI_BASE: COLORI_BASE, ZONE: ZONE, TIPI: TIPI, SERVIZI: SERVIZI, BLOCCHI: BLOCCHI,
   CATALOGO_BASE: CATALOGO_BASE, FAMIGLIA_BASE: FAMIGLIA_BASE, SFIDE: SFIDE, CFG_BASE: CFG_BASE,
-  famFinestra: famFinestra, famConsiglio: famConsiglio,
+  famFinestra: famFinestra, famConsiglio: famConsiglio, STUFE_K: STUFE_K,
   ESITI_RUOTA: ESITI_RUOTA, SORPRESE: SORPRESE, ROT_DAL: ROT_DAL,
   clona: clona, r2: r2, eur: eur, hash: hash, rngDa: rngDa, pesca: pesca, mescola: mescola, nuovoId: nuovoId,
   pezzi: pezzi, romaTs: romaTs, iso: iso, kTs: kTs, piuGiorni: piuGiorni, dowK: dowK, giorniTra: giorniTra,
@@ -2747,7 +2835,9 @@ var SUONO = {
   fatto: function () { nota(880, 0.14, 'sine', 0.09); nota(1318.5, 0.24, 'sine', 0.08, 0.07); },
   carta: function () { nota(620 + Math.random() * 120, 0.07, 'triangle', 0.05); },
   moneta: function () { nota(1975.5, 0.07, 'square', 0.03); nota(2637, 0.18, 'square', 0.028, 0.06); },
-  via: function () { nota(330, 0.08, 'triangle', 0.06); nota(495, 0.1, 'triangle', 0.06, 0.07); }
+  via: function () { nota(330, 0.08, 'triangle', 0.06); nota(495, 0.1, 'triangle', 0.06, 0.07); },
+  pellet: function () { for (var i = 0; i < 9; i++) nota(900 + Math.random() * 700, 0.03, 'square', 0.022, 0.12 + i * 0.045 + Math.random() * 0.02); },
+  vetro: function () { nota(1568, 0.09, 'sine', 0.06); nota(2093, 0.2, 'sine', 0.05, 0.08); nota(2637, 0.3, 'sine', 0.04, 0.16); }
 };
 /* coriandoli su canvas: tanti, leggeri, con la gravità */
 function coriandoli(x, y, n, forte) {
@@ -3393,6 +3483,65 @@ function carteServizi() {
     indietro.map(function (s) { return rigaServizio(s, true); }).join('') + '</div></section>';
   return h;
 }
+/* ---------- le stufe (missione di stagione) ----------
+   Due stufe che escono dal bordo della carta: sopra il coperchio del pellet, sotto il vetro.
+   Ogni spunta prende il colore di chi l'ha fatta.                                          */
+var STUFA_ANIM = null;   /* {k, g, t}: l'ultima spunta, per far finire l'animazione anche se si ridisegna */
+function ritardo(k, g, ms) {
+  if (!STUFA_ANIM || STUFA_ANIM.k !== k || STUFA_ANIM.g !== g) return null;
+  var passati = Date.now() - STUFA_ANIM.t;
+  return passati < 2000 ? (ms - passati) : null;
+}
+function cartaStufe() {
+  var a = A(), c = cfg().stufe;
+  if (!c || !c.attive || prePartenza() || M.eVia(a, io, M.domenicaK(adesso()))) return '';
+  var g = oggiK(), giorno = (a.stufe || {})[g] || {}, nomi = c.nomi || ['Stufa 1', 'Stufa 2'];
+  var fatte = M.STUFE_K.filter(function (k) { return giorno[k]; }).length;
+  var spunta = function (k, tipo, nome) {
+    var x = giorno[k], colore = x ? col(x.c) : '', chiaro = x && M.inchiostro(colore) !== '#FFFFFF';
+    var rit = x ? ritardo(k, g, tipo === 'c' ? 520 : 120) : null;
+    var etichetta = nome + (tipo === 'c' ? ': carico del pellet' : ': vetro pulito') + (x ? ', fatto da ' + x.c : '');
+    var dentro = tipo === 'c'
+      ? (x ? '<b class="st-chi">' + esc(M.INIZIALI[x.c] || '?') + '</b>' : '<span class="st-pellet"><i></i><i></i><i></i><i></i><i></i></span>')
+      : '<span class="st-fiamma"><i></i><i></i></span>' + (x ? '<b class="st-chi">' + esc(M.INIZIALI[x.c] || '?') + '</b>' : '');
+    return '<button class="st-' + (tipo === 'c' ? 'carico' : 'vetro') + (x ? ' fatto' + (chiaro ? ' chiaro' : '') : '') + (rit != null ? ' appena' : '') + '" data-a="stufa" data-k="' + k + '"' +
+      ' style="' + (x ? '--c:' + colore + ';' : '') + (rit != null ? '--rit:' + Math.round(rit) + 'ms' : '') + '" aria-label="' + esc(etichetta) + '" aria-pressed="' + !!x + '">' + dentro + '</button>';
+  };
+  var stufa = function (i) {
+    var n = nomi[i] || 'Stufa ' + (i + 1);
+    return '<div class="stufa" data-i="' + i + '"><div class="st-corpo">' + spunta('s' + i + 'c', 'c', n) +
+      '<span class="st-targa">' + esc(n) + '</span>' + spunta('s' + i + 'p', 'p', n) + '</div><span class="st-piedi"></span></div>';
+  };
+  var pallini = M.STUFE_K.map(function (k) { var x = giorno[k]; return '<i' + (x ? ' style="background:' + col(x.c) + '"' : '') + '></i>'; }).join('');
+  return '<section class="sez"><div class="sez-h"><h2>Stufe</h2><span class="sez-a">' + (fatte === 4 ? 'tutto fatto, +20' : fatte + ' di 4 oggi') + '</span></div>' +
+    '<div class="stufe-card' + (fatte === 4 ? ' tutte' : '') + '">' + stufa(0) +
+    '<div class="st-centro"><b>' + fatte + '<small>/4</small></b><span class="st-pallini">' + pallini + '</span>' +
+    '<span class="st-aiuto">Sopra: pellet caricato.<br>Sotto: vetro pulito.<br><b>+' + (cfg().pt.stufa || 5) + '</b> a tocco</span></div>' +
+    stufa(1) + '</div></section>';
+}
+/* il pellet che cade nel coperchio: piccoli cilindri marrone chiaro, fuori dal ridisegno */
+function cadePellet(r) {
+  if (!r || ridotto()) return;
+  var strato = document.createElement('div');
+  strato.className = 'pellet-strato';
+  document.body.appendChild(strato);
+  var colori = ['#D9B48A', '#C99B6B', '#E2C29A', '#B7895C', '#CFA779'];
+  for (var i = 0; i < 18; i++) {
+    var p = document.createElement('i');
+    var x0 = r.left + r.width * (0.2 + Math.random() * 0.6), x1 = r.left + r.width * (0.25 + Math.random() * 0.5);
+    p.style.background = colori[i % colori.length];
+    p.style.left = '0px'; p.style.top = '0px';
+    strato.appendChild(p);
+    var rot0 = Math.random() * 180, rot1 = rot0 + (Math.random() - 0.5) * 260, y0 = r.top - 60 - Math.random() * 50, y1 = r.top + r.height * (0.35 + Math.random() * 0.3);
+    if (p.animate) p.animate([
+      { transform: 'translate(' + x0 + 'px,' + y0 + 'px) rotate(' + rot0 + 'deg)', opacity: 0 },
+      { opacity: 1, offset: 0.12 },
+      { transform: 'translate(' + x1 + 'px,' + y1 + 'px) rotate(' + rot1 + 'deg)', opacity: 1, offset: 0.88 },
+      { transform: 'translate(' + x1 + 'px,' + (y1 + 4) + 'px) rotate(' + rot1 + 'deg)', opacity: 0 }
+    ], { duration: 560 + Math.random() * 220, delay: i * 26, easing: 'cubic-bezier(.45,0,.9,.55)', fill: 'both' });
+  }
+  setTimeout(function () { strato.remove(); }, 1400);
+}
 function cartaMissioni() {
   var S = settOra(), a = A();
   if (!S || !S.estratto) return '';
@@ -3531,7 +3680,7 @@ function vOggi() {
   if (inProva()) h += bannerProva();
   if (M.eVia(a, io, M.domenicaK(t))) h += '<section class="card" style="margin-bottom:.75rem"><div class="riga"><span class="ic" style="--k:#6B7A99">' + ic('valigia') + '</span><span class="rt"><b>Questa settimana sei via</b><span>Niente missioni né turni. Buon viaggio!</span></span></div></section>';
   else if (!S || !S.giri[io]) h += cartaRito();
-  h += cartaVersare() + carteBidoni() + carteServizi() + cartaFamiglia() + cartaMissioni() + cartaColpo() + cartaSfida() + carteFlash() +
+  h += cartaVersare() + carteBidoni() + carteServizi() + cartaStufe() + cartaFamiglia() + cartaMissioni() + cartaColpo() + cartaSfida() + carteFlash() +
     cartaLavatrice() + cartaOggetti() + cartaConto();
   return h;
 }
@@ -3906,6 +4055,7 @@ PAGINE.regole = function () {
       'Una tua missione che non riesci a fare la puoi rimettere in bacheca (tre puntini accanto): la prende qualcun altro.']) +
     sez('I punti', ['Missioni: un punto per minuto. Missione d\'oro e ruota ×2 valgono il doppio.',
       'Tavola +' + pt.tavola + ', piatti +' + pt.piatti + ' a sera, a chi li fa davvero. Se non era il tuo turno, +' + pt.servizioCopre + ' in più.',
+      'Stufe, finché è stagione: per ogni stufa il pellet caricato e il vetro pulito valgono +' + (pt.stufa || 5) + ' l\'uno, una volta al giorno. Tutte e quattro: +' + 4 * (pt.stufa || 5) + '.',
       'Bidone +' + pt.bidone + ' a chi ha il turno, +' + pt.bidoneCopre + ' a chi lo porta al posto di un altro, ' + pt.bidoneDimenticato + ' se si dimentica (si segna fino alle ' + c.oraBidoneMax + ' del giorno del ritiro).',
       'Lavatrice: avviata +' + pt.lavAvvia + ', stesa +' + pt.lavStendi + ', ritirata e piegata +' + pt.lavRitira + '. A fine giro arriva la notifica a tutti: prende i punti il primo.',
       'Fuori di casa: +' + pt.oggetto + ' per ogni cosa buttata, regalata o venduta, fino a ' + pt.oggettiMax + ' a settimana; ' + pt.oggettiZero + ' se nella settimana non esce niente.']) +
@@ -3950,6 +4100,7 @@ PAGINE.svil = function () {
       ['Bidoni segnabili fino alle', ['oraBidoneMax'], c.oraBidoneMax, 1, '']].map(function (r) {
         return '<div class="fra" style="margin:.4rem 0"><b style="flex:1;font-size:.9rem">' + r[0] + '</b>' + num(r[1], r[2], r[3], r[4]) + '</div>';
       }).join('') +
+    '<div class="fra" style="margin:.6rem 0"><b style="flex:1;font-size:.9rem">Stufe (missione di stagione)</b><button class="tog' + (c.stufe && c.stufe.attive ? ' on' : '') + '" data-a="cfg-tog" data-p=\'["stufe","attive"]\' role="switch" aria-checked="' + !!(c.stufe && c.stufe.attive) + '" aria-label="Stufe"></button></div>' +
     '<div class="fra" style="margin:.6rem 0"><b style="flex:1;font-size:.9rem">Riporto del credito in più</b><button class="tog' + (c.riporto ? ' on' : '') + '" data-a="cfg-tog" data-p=\'["riporto"]\' role="switch" aria-checked="' + !!c.riporto + '" aria-label="Riporto"></button></div>' +
     '<div class="campo"><span>Chi offre la cena</span><div class="scelte">' + NOMI.map(function (n) {
       var on = c.offronoCena.indexOf(n) >= 0;
@@ -4547,6 +4698,27 @@ function fattoServizio(k, el) {
   toast('+' + p + ' · ' + s.sv.nome, function () { if (ferma) ferma(); esegui({ o: 'annulla', tipo: 'servizio', k: k }, true); });
 }
 AZ['fatto-servizio'] = function (el) { fattoServizio(el.dataset.k, el); };
+AZ.stufa = function (el) {
+  var k = el.dataset.k, g = oggiK(), a = A(), x = ((a.stufe || {})[g] || {})[k], nomi = cfg().stufe.nomi || [];
+  var nome = nomi[Number(k.charAt(1))] || 'Stufa', cosa = k.charAt(2) === 'c' ? 'pellet caricato' : 'vetro pulito';
+  if (x) {
+    if (x.c !== io) { toast(M.maiuscola(cosa) + ' da ' + x.c + ' (' + nome + ').'); return; }
+    return conferma('Togli la spunta?', nome + ': ' + cosa + '. I ' + (cfg().pt.stufa || 5) + ' punti spariscono.', 'Togli', true).then(function (si) {
+      if (si) esegui({ o: 'stufa_togli', g: g, k: k });
+    });
+  }
+  var r0 = el.getBoundingClientRect(), prima = puntiTesta();
+  STUFA_ANIM = { k: k, g: g, t: Date.now() };
+  var r = esegui({ o: 'stufa', g: g, k: k });
+  if (!r.ok) { STUFA_ANIM = null; return; }
+  vibra(k.charAt(2) === 'c' ? [8, 30, 8, 30, 8] : 14);
+  if (k.charAt(2) === 'c') { cadePellet(r0); SUONO.pellet(); } else SUONO.vetro();
+  var dopo = puntiTesta();
+  setTimeout(function () { if (dopo !== prima) volaPunti(r0, dopo - prima, prima); }, k.charAt(2) === 'c' ? 520 : 150);
+  var tutte = M.STUFE_K.every(function (j) { return ((A().stufe || {})[g] || {})[j]; });
+  if (tutte) setTimeout(function () { var c = $('.stufe-card'); var rc = c ? c.getBoundingClientRect() : null; coriandoli(rc ? rc.left + rc.width / 2 : null, rc ? rc.top + rc.height / 2 : null, 70, true); SUONO.vinto(); }, 700);
+  toast('+' + (cfg().pt.stufa || 5) + ' · ' + nome + ': ' + cosa + (tutte ? ' · stufe a posto per oggi!' : ''), function () { STUFA_ANIM = null; esegui({ o: 'stufa_togli', g: g, k: k }, true); });
+};
 AZ['togli-servizio'] = function (el) {
   var k = el.dataset.k, s = M.servizio(A(), k);
   return conferma('Togli la spunta?', (s ? s.sv.nome + ' di ' + M.dataLunga(s.giorno) : 'Il turno') + ' torna da fare e i punti spariscono.', 'Togli', true).then(function (si) {
