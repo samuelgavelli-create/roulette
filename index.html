@@ -582,6 +582,10 @@ textarea.inp{min-height:3.2rem;resize:vertical;line-height:1.35;padding-top:.6re
 .pellet-strato{position:fixed;inset:0;pointer-events:none;z-index:88;overflow:hidden}
 .pellet-strato i{position:absolute;width:5px;height:11px;border-radius:3px;box-shadow:inset 0 -2px 0 rgba(0,0,0,.2)}
 @media (prefers-reduced-motion:reduce){.st-carico.appena,.st-vetro.appena::before,.st-vetro.appena::after,.st-fiamma i{animation:none!important}}
+/* notifiche spente: la carta in Oggi */
+.avviso-push{display:flex;flex-wrap:wrap;align-items:center;gap:.7rem;padding:.85rem;margin-bottom:.75rem;border-radius:1.25rem;
+  background:var(--card);border:2px solid #FFB36B;box-shadow:var(--ombra)}
+.avviso-push .rt b{font-size:1rem}
 </style>
 </head>
 <body>
@@ -3131,10 +3135,12 @@ function ricarica() {
     if (CODA.length || SPORCO) manda();
   }).catch(function () { online = false; });
 }
+var ultimoControlloPush = 0;
 document.addEventListener('visibilitychange', function () {
   if (document.visibilityState !== 'visible') return;
   if (TEST_LOCALE) { automatiche(); disegnaSeLibero(); return; }
   ricarica();
+  if (io && Date.now() - ultimoControlloPush > 60000) { ultimoControlloPush = Date.now(); riattivaSeServe().then(aggiornaPush); }
 });
 window.addEventListener('online', function () { ricarica(); manda(200); });
 /* conversione, chiusura della settimana, jolly del mese, cena sbloccata */
@@ -3152,7 +3158,7 @@ function dopoArrivo() {
   automatiche();
   if (CODA.length || SPORCO) manda(50);
   disegna();
-  if (io) { setTimeout(benvenuto, 900); riattivaSeServe(); aggiornaPush(); }
+  if (io) { setTimeout(benvenuto, 900); riattivaSeServe().then(aggiornaPush); }
   azioneDaIndirizzo();
 }
 
@@ -3167,6 +3173,17 @@ var ANDROID = /Android/i.test(navigator.userAgent);
 function INSTALLATA() { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
 function SUPPORTO() { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
 var PUSH = { supporto: false, permesso: '?', iscritto: false, chi: null, disp: [], ultimo: '', caricato: false };
+/* l'iscrizione del telefono è fatta con la nostra chiave VAPID? (se no va rifatta) */
+function stessaChiave(sub) {
+  try {
+    var k = sub && sub.options && sub.options.applicationServerKey;
+    if (!k) return true;
+    var a = new Uint8Array(k), b = b64u8(SUPA.vapid);
+    if (a.length !== b.length) return false;
+    for (var i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  } catch (e) { return true; }
+}
 async function iscrizioneCorrente() {
   if (!SUPPORTO()) return null;
   try { var r = await navigator.serviceWorker.getRegistration(); return r ? await r.pushManager.getSubscription() : null; } catch (e) { return null; }
@@ -3195,13 +3212,14 @@ async function attivaPush() {
     var reg = await navigator.serviceWorker.register('sw.js');
     await navigator.serviceWorker.ready;
     var sub = await reg.pushManager.getSubscription();
-    if (sub) { try { await sub.unsubscribe(); } catch (e) { } }
-    sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u8(SUPA.vapid) });
+    if (sub && !stessaChiave(sub)) { try { await sub.unsubscribe(); } catch (e) { } sub = null; }
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u8(SUPA.vapid) });
     if (!sb) { toast('Collegamento non ancora pronto: riprova fra qualche secondo.'); return; }
     var j = sub.toJSON();
     var r = await sb.from('push').upsert({ endpoint: j.endpoint, casa: SUPA.casa, chi: io, sub: j, agg: new Date().toISOString() }, { onConflict: 'endpoint' });
     if (r.error) throw r.error;
     salvaLS('casa-push', io);
+    try { localStorage.removeItem('casa-push-no'); localStorage.removeItem('casa-push-dopo'); } catch (e) { }
     PUSH.ultimo = 'iscrizione salvata';
     toast('Notifiche attive per ' + io + ' su questo telefono.');
     aggiornaPush();
@@ -3211,6 +3229,7 @@ async function spegniPush() {
   var s = await iscrizioneCorrente();
   if (s) { try { if (sb) await sb.from('push').delete().eq('endpoint', s.endpoint); } catch (e) { } try { await s.unsubscribe(); } catch (e) { } }
   try { localStorage.removeItem('casa-push'); } catch (e) { }
+  salvaLS('casa-push-no', '1');   /* spente apposta: niente riattivazione automatica né promemoria in Oggi */
   toast('Notifiche spente su questo telefono.');
   aggiornaPush();
 }
@@ -3224,14 +3243,26 @@ async function ricollegaPush() {
 /* se il permesso c'è già ma l'iscrizione si è persa, la rifacciamo senza chiedere niente */
 async function riattivaSeServe() {
   try {
-    if (!sb || !io || !SUPPORTO() || Notification.permission !== 'granted') return;
+    if (!sb || !io || !SUPPORTO() || Notification.permission !== 'granted' || leggiLS('casa-push-no')) return;
     if (IOS && !INSTALLATA()) return;
     var reg = (await navigator.serviceWorker.getRegistration()) || (await navigator.serviceWorker.register('sw.js'));
     await navigator.serviceWorker.ready;
     var sub = await reg.pushManager.getSubscription();
+    if (sub && !stessaChiave(sub)) { try { await sub.unsubscribe(); } catch (e) { } sub = null; }
     if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u8(SUPA.vapid) });
     var j = sub.toJSON();
-    await sb.from('push').upsert({ endpoint: j.endpoint, casa: SUPA.casa, chi: io, sub: j, agg: new Date().toISOString() }, { onConflict: 'endpoint' });
+    /* il server cancella le iscrizioni che il servizio push dà per morte: se la nostra non c'è più,
+       se ne fa una nuova invece di risalvare quella vecchia (che non riceverebbe più niente) */
+    if (leggiLS('casa-push')) {
+      var c = await sb.from('push').select('endpoint').eq('endpoint', j.endpoint).maybeSingle();
+      if (!c.error && !c.data) {
+        try { await sub.unsubscribe(); } catch (e) { }
+        sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u8(SUPA.vapid) });
+        j = sub.toJSON();
+      }
+    }
+    var r = await sb.from('push').upsert({ endpoint: j.endpoint, casa: SUPA.casa, chi: io, sub: j, agg: new Date().toISOString() }, { onConflict: 'endpoint' });
+    if (r && r.error) throw r.error;
     salvaLS('casa-push', io);
   } catch (e) { PUSH.ultimo = 'riattivazione automatica: ' + ((e && e.message) || e); }
 }
@@ -3398,6 +3429,20 @@ function mieMissioni(S) {
 }
 
 /* ---------- oggi ---------- */
+/* notifiche spente su questo telefono: lo si dice chiaro, con un tocco solo per riattivarle */
+function cartaNotifiche() {
+  if (TEST_LOCALE || !PUSH.caricato || !SUPPORTO() || leggiLS('casa-push-no')) return '';
+  if (IOS && !INSTALLATA()) return '';
+  if (PUSH.iscritto && PUSH.chi === io && PUSH.permesso === 'granted') return '';
+  var dopo = Number(leggiLS('casa-push-dopo')) || 0;
+  if (Date.now() < dopo) return '';
+  var bloccate = PUSH.permesso === 'denied';
+  return '<section class="avviso-push"><span class="ic" style="--k:#FF7A1A">' + ic('campana') + '</span><span class="rt"><b>Notifiche spente su questo telefono</b><span>' +
+    (bloccate ? 'Sono bloccate: Impostazioni del telefono → App → Roulette (o Chrome) → Notifiche → consenti. Poi riapri l\'app.'
+      : 'Senza, non ti arrivano bidoni, turni e lavatrice. Basta un tocco.') + '</span></span>' +
+    '<div class="fila" style="margin-top:.6rem;width:100%">' + (bloccate ? '' : '<button class="btn oro" style="flex:1" data-a="push-attiva">' + ic('campana') + 'Attiva</button>') +
+    '<button class="btn tenue" data-a="push-dopo">Non ora</button></div></section>';
+}
 function cartaPartenza() {
   var a = A(), t = adesso();
   return '<section class="cta partenza"><span class="deco"></span><h3>Si parte ' + M.dataLunga(M.iso(a.da)) + '</h3>' +
@@ -3677,6 +3722,7 @@ function vOggi() {
   if (!a) return '<div class="vuoto" style="margin-top:3rem">Preparo la casa…</div>';
   var S = settOra(), t = adesso(), h = '<div class="giorno">' + M.maiuscola(M.dataLunga(oggiK())) + '</div>';
   if (prePartenza()) return h + cartaPartenza() + cartaLavatrice();
+  h += cartaNotifiche();
   if (inProva()) h += bannerProva();
   if (M.eVia(a, io, M.domenicaK(t))) h += '<section class="card" style="margin-bottom:.75rem"><div class="riga"><span class="ic" style="--k:#6B7A99">' + ic('valigia') + '</span><span class="rt"><b>Questa settimana sei via</b><span>Niente missioni né turni. Buon viaggio!</span></span></div></section>';
   else if (!S || !S.giri[io]) h += cartaRito();
@@ -5025,6 +5071,7 @@ AZ.tema = function (el) { salvaLS('alpha-tema', el.dataset.t); applicaAspetto();
 AZ.testo = function () { salvaLS('alpha-testo', leggiLS('alpha-testo') === 'grande' ? 'normale' : 'grande'); applicaAspetto(); disegna(); };
 AZ.colore = function (el) { if (esegui({ o: 'colore', h: el.dataset.h }).ok) vibra(10); };
 AZ['push-attiva'] = function () { return attivaPush(); };
+AZ['push-dopo'] = function () { salvaLS('casa-push-dopo', String(Date.now() + 3 * 864e5)); disegna(); };
 AZ['push-prova'] = function () { return provaPush(); };
 AZ['push-spegni'] = function () {
   return conferma('Spegni le notifiche?', 'Su questo telefono non arriverà più niente finché non le riattivi.', 'Spegni', true).then(function (si) { if (si) return spegniPush(); });
